@@ -426,6 +426,7 @@ export default function Page() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [recentCommits, setRecentCommits] = useState<RecentCommit[]>([]);
   const [isGitHubLoading, setIsGitHubLoading] = useState(true);
+  const isCampusInDisabled = true;
 
   useEffect(() => {
     getPostsFromPostgres().then(setPosts);
@@ -848,10 +849,10 @@ export default function Page() {
 
             <div className="mt-10 grid grid-cols-2 md:grid-cols-4 border-t border-black/15 dark:border-white/15">
               {[
-                { k: "Status", v: "Phase 02" },
+                { k: "Status", v: "Phase 01" },
                 { k: "Stack", v: "Next · Postgres" },
-                { k: "Open issues", v: "37" },
-                { k: "Good first", v: "12" },
+                { k: "Open issues", v: "0" },
+                { k: "Good first", v: "0" },
               ].map((m, i) => (
                 <div
                   key={m.k}
@@ -871,10 +872,16 @@ export default function Page() {
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <a
-                href={`${REPO_BASE}/campusin`}
+                href={isCampusInDisabled ? undefined : `${REPO_BASE}/campusin`}
                 target="_blank"
                 rel="noreferrer"
-                className="group inline-flex items-center gap-3 border border-[#111] dark:border-[#F4F4F0] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] hover:bg-[#111] hover:text-[#F7F7F2] dark:hover:bg-[#F4F4F0] dark:hover:text-[#121212] transition-colors"
+                aria-disabled={isCampusInDisabled}
+                tabIndex={isCampusInDisabled ? -1 : 0}
+                className={`group inline-flex items-center gap-3 border border-[#111] dark:border-[#F4F4F0] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors ${
+                  isCampusInDisabled
+                    ? "pointer-events-none cursor-not-allowed opacity-50"
+                    : "hover:bg-[#111] hover:text-[#F7F7F2] dark:hover:bg-[#F4F4F0] dark:hover:text-[#121212]"
+                }`}
               >
                 Contribute to CampusIn
                 <ArrowUpRight
@@ -883,10 +890,20 @@ export default function Page() {
                 />
               </a>
               <a
-                href={`${REPO_BASE}/campusin#readme`}
+                href={
+                  isCampusInDisabled
+                    ? undefined
+                    : `${REPO_BASE}/campusin#readme`
+                }
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-700 dark:text-zinc-300 hover:text-[#C85A41] transition-colors"
+                aria-disabled={isCampusInDisabled}
+                tabIndex={isCampusInDisabled ? -1 : 0}
+                className={`inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors ${
+                  isCampusInDisabled
+                    ? "pointer-events-none cursor-not-allowed text-zinc-500 dark:text-zinc-500 opacity-50"
+                    : "text-zinc-700 dark:text-zinc-300 hover:text-[#C85A41]"
+                }`}
               >
                 Read the RFC
                 <ArrowUpRight className="size-3.5" strokeWidth={1.5} />
@@ -901,14 +918,14 @@ export default function Page() {
               </div>
               <ol className="space-y-4 font-serif text-lg leading-snug">
                 <li className="flex gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
-                    01 - DONE
+                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-[#C85A41]">
+                    01 - NOW
                   </span>
                   <span>Auth, vendor onboarding & menu schema.</span>
                 </li>
                 <li className="flex gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-[#C85A41]">
-                    02 - NOW
+                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
+                    02 - NEXT
                   </span>
                   <span>Live order routing and kitchen display.</span>
                 </li>
