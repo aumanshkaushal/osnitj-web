@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, ArrowUpRight, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Moon, Sun } from "lucide-react";
 import { getPostBySlug, type BlogPost } from "@/lib/blog";
 import { useTheme } from "next-themes";
 
@@ -21,8 +21,8 @@ function ThemeToggle() {
   return (
     <button
       type="button"
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="h-9 w-9 flex items-center justify-center border border-white/10 hover:bg-white/[0.04] transition-colors"
+      onClick={() => setTheme(dark ? "light" : "dark")}
+      className="h-9 w-9 flex items-center justify-center border border-black/10 dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
       aria-label="Toggle Theme"
     >
       {dark ? (
@@ -97,8 +97,8 @@ export default function BlogPostPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#101014] text-[#ECE7DF] flex items-center justify-center">
-        <p className="font-mono text-xs uppercase tracking-[0.22em] text-zinc-500">
+      <main className="min-h-screen bg-[#F7F7F2] dark:bg-[#101014] text-[#111] dark:text-[#ECE7DF] flex items-center justify-center transition-colors">
+        <p className="font-mono text-xs uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-500">
           Loading dispatch...
         </p>
       </main>
@@ -107,7 +107,7 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <main className="min-h-screen bg-[#101014] text-[#ECE7DF] flex items-center justify-center px-6">
+      <main className="min-h-screen bg-[#F7F7F2] dark:bg-[#101014] text-[#111] dark:text-[#ECE7DF] flex items-center justify-center px-6 transition-colors">
         <div className="text-center">
           <h1 className="font-serif text-4xl mb-4">Post not found</h1>
 
@@ -126,13 +126,13 @@ export default function BlogPostPage() {
   const headings = extractHeadings(post.markdownContent);
 
   return (
-    <main className="min-h-screen bg-[#101014] text-[#ECE7DF] selection:bg-[#C85A41] selection:text-black">
+    <main className="min-h-screen bg-[#F7F7F2] dark:bg-[#101014] text-[#111] dark:text-[#ECE7DF] selection:bg-[#C85A41] selection:text-black transition-colors">
       {/* Header */}
-      <header className="border-b border-white/[0.06]">
+      <header className="border-b border-black/10 dark:border-white/[0.06]">
         <div className="max-w-[1400px] mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500 hover:text-[#C85A41] transition-colors"
+            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-500 hover:text-[#C85A41] transition-colors"
           >
             <ArrowLeft className="size-3.5" />
             Back
@@ -156,12 +156,12 @@ export default function BlogPostPage() {
             </div>
 
             {/* Title */}
-            <h1 className="font-serif text-4xl md:text-5xl leading-[1.02] tracking-[-0.04em] text-[#F5F1EA]">
+            <h1 className="font-serif text-4xl md:text-5xl leading-[1.02] tracking-[-0.04em] text-[#111] dark:text-[#F5F1EA]">
               {post.title}
             </h1>
 
             {/* Info */}
-            <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-zinc-500 border-b border-white/[0.06] pb-8">
+            <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-zinc-600 dark:text-zinc-500 border-b border-black/10 dark:border-white/[0.06] pb-8">
               <div>
                 By{" "}
                 <a
@@ -194,7 +194,7 @@ export default function BlogPostPage() {
                   return (
                     <h2
                       id={id}
-                      className="scroll-mt-24 mt-20 mb-6 font-serif text-3xl md:text-4xl leading-tight tracking-[-0.03em] text-[#F5F1EA]"
+                      className="scroll-mt-24 mt-20 mb-6 font-serif text-3xl md:text-4xl leading-tight tracking-[-0.03em] text-[#111] dark:text-[#F5F1EA]"
                     >
                       {children}
                     </h2>
@@ -202,7 +202,7 @@ export default function BlogPostPage() {
                 },
 
                 h3: ({ children }) => (
-                  <h3 className="mt-14 mb-4 font-serif text-2xl leading-tight text-[#F5F1EA]">
+                  <h3 className="mt-14 mb-4 font-serif text-2xl leading-tight text-[#111] dark:text-[#F5F1EA]">
                     {children}
                   </h3>
                 ),
@@ -231,7 +231,7 @@ export default function BlogPostPage() {
                   }
 
                   return (
-                    <p className="font-serif text-[17px] md:text-[18px] leading-[1.85] text-[#DDD6CB] mb-7">
+                    <p className="font-serif text-[17px] md:text-[18px] leading-[1.85] text-zinc-700 dark:text-[#DDD6CB] mb-7">
                       {children}
                     </p>
                   );
@@ -249,14 +249,14 @@ export default function BlogPostPage() {
                 ),
 
                 strong: ({ children }) => (
-                  <strong className="font-semibold text-[#F5F1EA]">
+                  <strong className="font-semibold text-[#111] dark:text-[#F5F1EA]">
                     {children}
                   </strong>
                 ),
 
                 blockquote: ({ children }) => (
                   <blockquote className="my-10 border-l border-[#C85A41] pl-5">
-                    <div className="font-serif italic text-[22px] leading-[1.7] text-[#F1E8DD]">
+                    <div className="font-serif italic text-[22px] leading-[1.7] text-zinc-800 dark:text-[#F1E8DD]">
                       {children}
                     </div>
                   </blockquote>
@@ -275,7 +275,7 @@ export default function BlogPostPage() {
                 ),
 
                 li: ({ children }) => (
-                  <li className="font-serif text-[17px] leading-[1.8] text-[#DDD6CB]">
+                  <li className="font-serif text-[17px] leading-[1.8] text-zinc-700 dark:text-[#DDD6CB]">
                     {children}
                   </li>
                 ),
@@ -283,22 +283,22 @@ export default function BlogPostPage() {
                 code: ({ inline, children }: any) => {
                   if (inline) {
                     return (
-                      <code className="bg-white/[0.04] border border-white/[0.06] rounded px-1.5 py-0.5 text-[14px] font-mono text-[#FF9B7A]">
+                      <code className="bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded px-1.5 py-0.5 text-[14px] font-mono text-[#C85A41]">
                         {children}
                       </code>
                     );
                   }
 
                   return (
-                    <code className="font-mono text-[14px] leading-7 text-[#EDE7DD]">
+                    <code className="font-mono text-[14px] leading-7 text-[#111] dark:text-[#EDE7DD]">
                       {children}
                     </code>
                   );
                 },
 
                 pre: ({ children }) => (
-                  <div className="my-10 overflow-hidden border border-white/[0.06] bg-white/[0.03] rounded-sm">
-                    <div className="px-4 py-2 border-b border-white/[0.06] font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500">
+                  <div className="my-10 overflow-hidden border border-black/[0.08] dark:border-white/[0.06] bg-black/[0.03] dark:bg-white/[0.03] rounded-sm">
+                    <div className="px-4 py-2 border-b border-black/[0.08] dark:border-white/[0.06] font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500">
                       Code
                     </div>
 
@@ -311,13 +311,13 @@ export default function BlogPostPage() {
                     <img
                       src={src || ""}
                       alt={alt || ""}
-                      className="w-full border border-white/[0.08]"
+                      className="w-full border border-black/[0.08] dark:border-white/[0.08]"
                     />
                   </div>
                 ),
 
                 hr: () => (
-                  <div className="my-16 border-t border-white/[0.06]" />
+                  <div className="my-16 border-t border-black/[0.08] dark:border-white/[0.06]" />
                 ),
               }}
             >
@@ -327,29 +327,27 @@ export default function BlogPostPage() {
         </article>
 
         {/* TOC */}
-        <aside className="hidden xl:block xl:col-span-3 px-10 py-20">
-          <div className="sticky top-16">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-600 mb-5">
-              On this page
-            </div>
+        {headings.length > 0 && (
+          <aside className="hidden xl:block xl:col-span-3 border-l border-black/10 dark:border-white/[0.06]">
+            <div className="sticky top-0 px-8 py-20">
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500 mb-6">
+                On this page
+              </div>
 
-            <div className="space-y-3">
-              {headings.map((heading) => {
-                const id = getHeadingId(heading);
-
-                return (
+              <nav className="space-y-4">
+                {headings.map((heading) => (
                   <a
                     key={heading}
-                    href={`#${id}`}
-                    className="block text-sm leading-relaxed text-zinc-500 hover:text-[#C85A41] transition-colors"
+                    href={`#${getHeadingId(heading)}`}
+                    className="block font-serif text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-400 hover:text-[#C85A41] transition-colors"
                   >
                     {heading}
                   </a>
-                );
-              })}
+                ))}
+              </nav>
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
       </div>
     </main>
   );
