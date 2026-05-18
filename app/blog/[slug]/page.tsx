@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { ArrowUpRight, Sun, Moon } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Moon, Sun } from "lucide-react";
 import { getPostBySlug, type BlogPost } from "@/lib/blog";
 import { useTheme } from "next-themes";
 
@@ -18,29 +18,73 @@ function ThemeToggle() {
 
   const dark = mounted && resolvedTheme === "dark";
 
-  const toggle = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
-
   return (
     <button
       type="button"
-      onClick={toggle}
-      className="p-2 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-      aria-label="Toggle theme"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      className="h-9 w-9 flex items-center justify-center border border-white/10 hover:bg-white/[0.04] transition-colors"
+      aria-label="Toggle Theme"
     >
       {dark ? (
-        <Sun className="size-5" strokeWidth={1.5} />
+        <Sun className="size-4" strokeWidth={1.5} />
       ) : (
-        <Moon className="size-5" strokeWidth={1.5} />
+        <Moon className="size-4" strokeWidth={1.5} />
       )}
     </button>
   );
 }
 
+function extractHeadings(markdown: string) {
+  const regex = /^##\s(.+)$/gm;
+  const headings: string[] = [];
+
+  let match;
+  while ((match = regex.exec(markdown)) !== null) {
+    headings.push(getPlainHeadingText(match[1]));
+  }
+
+  return headings;
+}
+
+function getPlainHeadingText(text: string) {
+  return text
+    .replace(/\\([\\`*_[\]{}()#+\-.!>])/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[`*_~]/g, "")
+    .trim();
+}
+
+function getNodeText(children: React.ReactNode): string {
+  if (typeof children === "string" || typeof children === "number") {
+    return String(children);
+  }
+
+  if (Array.isArray(children)) {
+    return children.map(getNodeText).join("");
+  }
+
+  if (children && typeof children === "object" && "props" in children) {
+    return getNodeText(
+      (children as React.ReactElement<{ children?: React.ReactNode }>).props
+        .children,
+    );
+  }
+
+  return "";
+}
+
+function getHeadingId(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
 export default function BlogPostPage() {
   const params = useParams();
   const slug = params.slug as string;
+
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,75 +97,83 @@ export default function BlogPostPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen w-full overflow-x-hidden bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] transition-colors flex items-center justify-center">
-        <p className="font-mono text-zinc-500">Loading...</p>
+      <main className="min-h-screen bg-[#101014] text-[#ECE7DF] flex items-center justify-center">
+        <p className="font-mono text-xs uppercase tracking-[0.22em] text-zinc-500">
+          Loading dispatch...
+        </p>
       </main>
     );
   }
 
   if (!post) {
     return (
-      <main className="min-h-screen w-full overflow-x-hidden bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] transition-colors flex items-center justify-center">
+      <main className="min-h-screen bg-[#101014] text-[#ECE7DF] flex items-center justify-center px-6">
         <div className="text-center">
-          <p className="font-serif text-2xl mb-4">Post not found</p>
+          <h1 className="font-serif text-4xl mb-4">Post not found</h1>
+
           <Link
             href="/blog"
-            className="font-mono text-[#C85A41] hover:underline flex items-center gap-2 justify-center"
+            className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-[#C85A41]"
           >
-            <ArrowUpRight className="size-3.5 rotate-180" strokeWidth={1.5} />
-            Back to Dispatches
+            <ArrowLeft className="size-3.5" />
+            Return
           </Link>
         </div>
       </main>
     );
   }
 
+  const headings = extractHeadings(post.markdownContent);
+
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] selection:bg-[#111] selection:text-[#F7F7F2] dark:selection:bg-[#F4F4F0] dark:selection:text-[#121212] transition-colors">
+    <main className="min-h-screen bg-[#101014] text-[#ECE7DF] selection:bg-[#C85A41] selection:text-black">
       {/* Header */}
-      <header className="grid grid-cols-12 border-b border-black/15 dark:border-white/15 font-mono text-[11px] uppercase tracking-[0.22em]">
-        <Link
-          href="/blog"
-          className="col-span-12 md:col-span-6 px-4 md:px-8 lg:px-10 py-6 flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-[#C85A41] transition-colors border-b md:border-b-0 md:border-r border-black/15 dark:border-white/15"
-        >
-          <ArrowUpRight className="size-3.5 rotate-180" strokeWidth={1.5} />
-          Return to Dispatches
-        </Link>
-        <div className="col-span-12 md:col-span-6 px-4 md:px-8 lg:px-10 py-6 flex items-center justify-end md:border-l border-black/15 dark:border-white/15">
+      <header className="border-b border-white/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500 hover:text-[#C85A41] transition-colors"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back
+          </Link>
+
           <ThemeToggle />
         </div>
       </header>
 
-      {/* Content */}
-      <article className="min-h-[calc(100vh-80px)] px-4 md:px-8 lg:px-12 xl:px-16">
-        <div className="mx-auto w-full max-w-5xl py-12 lg:py-16">
-          {/* Title */}
-          <h1 className="font-serif text-5xl md:text-6xl leading-[1.05] tracking-tight pb-2 mb-12">
-            {post.title}
-          </h1>
+      {/* Layout */}
+      <div className="max-w-[1400px] mx-auto grid grid-cols-12">
+        {/* Left spacer */}
+        <div className="hidden xl:block xl:col-span-2" />
 
-          {/* Metadata */}
-          <div className="grid grid-cols-3 gap-4 border-y border-black/15 dark:border-white/15 py-6 mb-10 font-mono text-[11px] uppercase tracking-[0.22em]">
-            <div>
-              <div className="text-zinc-600 dark:text-zinc-400 mb-2">
-                Author
-              </div>
-              <a
-                href={`https://github.com/${post.author.github}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[#C85A41] hover:underline"
-              >
-                @{post.author.github}
-              </a>
-              <div className="text-zinc-600 dark:text-zinc-400 text-[10px] mt-1 font-serif">
-                {post.author.name}
-              </div>
+        {/* Article */}
+        <article className="col-span-12 xl:col-span-7 px-6 md:px-10 py-14 md:py-20">
+          <div className="max-w-[680px]">
+            {/* Meta */}
+            <div className="mb-8 font-mono text-[10px] uppercase tracking-[0.22em] text-[#C85A41]">
+              Technical Dispatch
             </div>
-            <div>
-              <div className="text-zinc-600 dark:text-zinc-400 mb-2">
-                Published
+
+            {/* Title */}
+            <h1 className="font-serif text-4xl md:text-5xl leading-[1.02] tracking-[-0.04em] text-[#F5F1EA]">
+              {post.title}
+            </h1>
+
+            {/* Info */}
+            <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-zinc-500 border-b border-white/[0.06] pb-8">
+              <div>
+                By{" "}
+                <a
+                  href={`https://github.com/${post.author.github}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#C85A41] hover:underline"
+                >
+                  @{post.author.github}
+                </a>
               </div>
+
               <div>
                 {new Date(post.date).toLocaleDateString("en-US", {
                   year: "numeric",
@@ -129,93 +181,176 @@ export default function BlogPostPage() {
                   day: "numeric",
                 })}
               </div>
-            </div>
-            <div>
-              <div className="text-zinc-600 dark:text-zinc-400 mb-2">
-                Read Time
-              </div>
-              <div>{post.readTime} min</div>
-            </div>
-          </div>
 
-          {/* Body - Markdown */}
-          <ReactMarkdown
-            components={{
-              p: ({ children }) => (
-                <p className="font-serif text-base md:text-lg leading-relaxed text-zinc-800 dark:text-zinc-200 mb-6">
-                  {children}
-                </p>
-              ),
-              h2: ({ children }) => (
-                <h2 className="font-serif text-3xl tracking-tight mt-12 mb-4 pb-1">
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className="font-serif text-2xl tracking-tight mt-8 mb-3 pb-1">
-                  {children}
-                </h3>
-              ),
-              a: ({ href, children }) => (
-                <a
-                  href={href}
-                  target={href?.startsWith("http") ? "_blank" : undefined}
-                  rel={href?.startsWith("http") ? "noreferrer" : undefined}
-                  className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/40 hover:decoration-[#C85A41] transition-colors"
-                >
-                  {children}
-                </a>
-              ),
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-2 border-[#C85A41] pl-6 my-6 font-serif italic text-zinc-700 dark:text-zinc-300">
-                  {children}
-                </blockquote>
-              ),
-              code: ({ inline, children }: any) => {
-                if (inline) {
+              <div>{post.readTime} min read</div>
+            </div>
+
+            {/* Markdown */}
+            <ReactMarkdown
+              components={{
+                h2: ({ children }) => {
+                  const id = getHeadingId(getNodeText(children));
+
                   return (
-                    <code className="bg-black/5 dark:bg-white/5 px-1.5 py-0.5 font-mono text-[13px] text-[#C85A41] rounded">
+                    <h2
+                      id={id}
+                      className="scroll-mt-24 mt-20 mb-6 font-serif text-3xl md:text-4xl leading-tight tracking-[-0.03em] text-[#F5F1EA]"
+                    >
+                      {children}
+                    </h2>
+                  );
+                },
+
+                h3: ({ children }) => (
+                  <h3 className="mt-14 mb-4 font-serif text-2xl leading-tight text-[#F5F1EA]">
+                    {children}
+                  </h3>
+                ),
+
+                p: ({ children }) => {
+                  const childArray = Array.isArray(children)
+                    ? children
+                    : [children];
+
+                  const hasBlockContent = childArray.some((child: any) => {
+                    if (!child || typeof child === "string") {
+                      return false;
+                    }
+
+                    return (
+                      child?.type === "img" ||
+                      child?.type?.name === "img" ||
+                      child?.props?.node?.tagName === "img" ||
+                      child?.props?.node?.tagName === "pre" ||
+                      child?.props?.node?.tagName === "blockquote"
+                    );
+                  });
+
+                  if (hasBlockContent) {
+                    return <>{children}</>;
+                  }
+
+                  return (
+                    <p className="font-serif text-[17px] md:text-[18px] leading-[1.85] text-[#DDD6CB] mb-7">
+                      {children}
+                    </p>
+                  );
+                },
+
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target={href?.startsWith("http") ? "_blank" : undefined}
+                    rel={href?.startsWith("http") ? "noreferrer" : undefined}
+                    className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41]"
+                  >
+                    {children}
+                  </a>
+                ),
+
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-[#F5F1EA]">
+                    {children}
+                  </strong>
+                ),
+
+                blockquote: ({ children }) => (
+                  <blockquote className="my-10 border-l border-[#C85A41] pl-5">
+                    <div className="font-serif italic text-[22px] leading-[1.7] text-[#F1E8DD]">
+                      {children}
+                    </div>
+                  </blockquote>
+                ),
+
+                ul: ({ children }) => (
+                  <ul className="my-6 ml-6 space-y-3 list-disc marker:text-[#C85A41]">
+                    {children}
+                  </ul>
+                ),
+
+                ol: ({ children }) => (
+                  <ol className="my-6 ml-6 space-y-3 list-decimal marker:text-[#C85A41]">
+                    {children}
+                  </ol>
+                ),
+
+                li: ({ children }) => (
+                  <li className="font-serif text-[17px] leading-[1.8] text-[#DDD6CB]">
+                    {children}
+                  </li>
+                ),
+
+                code: ({ inline, children }: any) => {
+                  if (inline) {
+                    return (
+                      <code className="bg-white/[0.04] border border-white/[0.06] rounded px-1.5 py-0.5 text-[14px] font-mono text-[#FF9B7A]">
+                        {children}
+                      </code>
+                    );
+                  }
+
+                  return (
+                    <code className="font-mono text-[14px] leading-7 text-[#EDE7DD]">
                       {children}
                     </code>
                   );
-                }
+                },
+
+                pre: ({ children }) => (
+                  <div className="my-10 overflow-hidden border border-white/[0.06] bg-white/[0.03] rounded-sm">
+                    <div className="px-4 py-2 border-b border-white/[0.06] font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500">
+                      Code
+                    </div>
+
+                    <pre className="overflow-x-auto px-5 py-5">{children}</pre>
+                  </div>
+                ),
+
+                img: ({ src, alt }) => (
+                  <div className="my-12">
+                    <img
+                      src={src || ""}
+                      alt={alt || ""}
+                      className="w-full border border-white/[0.08]"
+                    />
+                  </div>
+                ),
+
+                hr: () => (
+                  <div className="my-16 border-t border-white/[0.06]" />
+                ),
+              }}
+            >
+              {post.markdownContent}
+            </ReactMarkdown>
+          </div>
+        </article>
+
+        {/* TOC */}
+        <aside className="hidden xl:block xl:col-span-3 px-10 py-20">
+          <div className="sticky top-16">
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-600 mb-5">
+              On this page
+            </div>
+
+            <div className="space-y-3">
+              {headings.map((heading) => {
+                const id = getHeadingId(heading);
+
                 return (
-                  <code className="font-mono text-[13px] text-zinc-800 dark:text-zinc-200">
-                    {children}
-                  </code>
+                  <a
+                    key={heading}
+                    href={`#${id}`}
+                    className="block text-sm leading-relaxed text-zinc-500 hover:text-[#C85A41] transition-colors"
+                  >
+                    {heading}
+                  </a>
                 );
-              },
-              pre: ({ children }) => (
-                <pre className="bg-black/5 dark:bg-white/5 p-4 border border-black/10 dark:border-white/10 overflow-x-auto text-[13px] font-mono text-zinc-800 dark:text-zinc-200 my-6 rounded">
-                  {children}
-                </pre>
-              ),
-              ul: ({ children }) => (
-                <ul className="font-serif text-base text-zinc-800 dark:text-zinc-200 my-6 ml-6 space-y-2 list-disc">
-                  {children}
-                </ul>
-              ),
-              ol: ({ children }) => (
-                <ol className="font-serif text-base text-zinc-800 dark:text-zinc-200 my-6 ml-6 space-y-2 list-decimal">
-                  {children}
-                </ol>
-              ),
-              li: ({ children }) => (
-                <li className="font-serif text-base text-zinc-800 dark:text-zinc-200">
-                  {children}
-                </li>
-              ),
-              strong: ({ children }) => (
-                <strong className="font-serif font-bold text-zinc-800 dark:text-zinc-200">
-                  {children}
-                </strong>
-              ),
-            }}
-          >
-            {post.markdownContent}
-          </ReactMarkdown>
-        </div>
-      </article>
+              })}
+            </div>
+          </div>
+        </aside>
+      </div>
     </main>
   );
 }
