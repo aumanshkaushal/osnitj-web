@@ -3,7 +3,7 @@ import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
-
+import Script from "next/script";
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
   weight: ["400"],
@@ -34,9 +34,10 @@ export const metadata: Metadata = {
     "Student Developer Community",
     "Hackathons",
     "Open Source Projects",
-    "React",
-    "Next.js",
-    "GitHub",
+    "NIT Jalandhar open source",
+    "NITJ developer community",
+    "student open source India",
+    "college coding community",
     "Programming Club",
     "Developer Community India",
     "NITJ coding club",
@@ -117,6 +118,20 @@ export default function RootLayout({
       className={`${instrumentSerif.variable} ${jetbrainsMono.variable} bg-[#F7F7F2] dark:bg-[#121212]`}
     >
       <body className="font-mono antialiased bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] transition-colors">
+        <Script
+          id="schema-org"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "OpenSource @ NITJ",
+              url: "https://opensourcenitj.com",
+              logo: "https://opensourcenitj.com/og-image.png",
+              sameAs: ["https://github.com/Opensource-NITJ"],
+            }),
+          }}
+        />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>
