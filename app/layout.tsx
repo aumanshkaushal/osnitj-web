@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import {
+  Instrument_Serif,
+  JetBrains_Mono,
+  Lora,
+  Inter,
+} from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
@@ -14,6 +19,17 @@ const instrumentSerif = Instrument_Serif({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+});
+
+const lora = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-lora",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -115,7 +131,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${instrumentSerif.variable} ${jetbrainsMono.variable} bg-[#F7F7F2] dark:bg-[#121212]`}
+      className={`${instrumentSerif.variable} ${jetbrainsMono.variable} ${lora.variable} ${inter.variable} bg-[#F7F7F2] dark:bg-[#121212]`}
     >
       <body className="font-mono antialiased bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] transition-colors">
         <Script
