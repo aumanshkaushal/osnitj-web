@@ -36,41 +36,6 @@ type Contributor = {
   url: string;
 };
 
-type GitHubRepo = {
-  name: string;
-  description: string | null;
-  html_url: string;
-  language: string | null;
-  stargazers_count: number;
-  forks_count: number;
-  archived: boolean;
-  fork: boolean;
-  default_branch: string;
-};
-
-type GitHubContributor = {
-  login: string;
-  avatar_url: string;
-  html_url: string;
-  contributions: number;
-  type: string;
-};
-
-type GitHubCommit = {
-  sha: string;
-  html_url: string;
-  commit: {
-    message: string;
-    author: {
-      name: string;
-      date: string;
-    } | null;
-  };
-  author: {
-    login: string;
-    html_url: string;
-  } | null;
-};
 
 type RecentCommit = {
   sha: string;
@@ -96,7 +61,6 @@ const NAV = [
 
 const ORG_LOGIN = "Opensource-NITJ";
 const REPO_BASE = `https://github.com/${ORG_LOGIN}`;
-const GITHUB_API_BASE = "https://api.github.com";
 
 const ISSUE_DATE = new Date()
   .toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -114,135 +78,7 @@ function pad(n: number, w = 2) {
   return String(n).padStart(w, "0");
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-    },
-  });
 
-  if (!res.ok) {
-    throw new Error(`GitHub request failed: ${res.status}`);
-  }
-
-  return res.json() as Promise<T>;
-}
-
-async function fetchGitHubOrgRepos() {
-  const repos: GitHubRepo[] = [];
-  let page = 1;
-
-  while (true) {
-    const pageRepos = await fetchJson<GitHubRepo[]>(
-      `${GITHUB_API_BASE}/orgs/${ORG_LOGIN}/repos?type=public&sort=pushed&per_page=100&page=${page}`,
-    );
-
-    repos.push(...pageRepos);
-    if (pageRepos.length < 100) break;
-    page += 1;
-  }
-
-  return repos;
-}
-
-async function fetchRepoContributors(repo: string) {
-  return fetchJson<GitHubContributor[]>(
-    `${GITHUB_API_BASE}/repos/${ORG_LOGIN}/${repo}/contributors?per_page=100`,
-  );
-}
-
-async function fetchRepoCommits(repo: GitHubRepo) {
-  const commits = await fetchJson<GitHubCommit[]>(
-    `${GITHUB_API_BASE}/repos/${ORG_LOGIN}/${repo.name}/commits?sha=${repo.default_branch}&per_page=5`,
-  );
-
-  return commits.map((commit) => ({
-    sha: commit.sha,
-    message: commit.commit.message.split("\n")[0] || "Commit",
-    date: commit.commit.author?.date ?? new Date(0).toISOString(),
-    repo: repo.name,
-    repoUrl: repo.html_url,
-    url: commit.html_url,
-    author: commit.author?.login ?? commit.commit.author?.name ?? "unknown",
-    authorUrl: commit.author?.html_url ?? null,
-    branch: repo.default_branch,
-  }));
-}
-
-async function fetchGitHubOrgSnapshot() {
-  const repos = await fetchGitHubOrgRepos();
-  const [contributorsByRepo, commitsByRepo] = await Promise.all([
-    Promise.all(
-      repos.map(async (repo) => {
-        try {
-          return [repo.name, await fetchRepoContributors(repo.name)] as const;
-        } catch {
-          return [repo.name, []] as const;
-        }
-      }),
-    ),
-    Promise.all(
-      repos.map(async (repo) => {
-        try {
-          return await fetchRepoCommits(repo);
-        } catch {
-          return [];
-        }
-      }),
-    ),
-  ]);
-
-  const contributorTotals = new Map<
-    string,
-    Contributor & { contributions: number }
-  >();
-  const contributorCounts = new Map<string, number>();
-
-  contributorsByRepo.forEach(([repoName, repoContributors]) => {
-    contributorCounts.set(repoName, repoContributors.length);
-
-    repoContributors.forEach((contributor) => {
-      if (!contributor.login || contributor.type === "Bot") return;
-
-      const current = contributorTotals.get(contributor.login);
-      contributorTotals.set(contributor.login, {
-        handle: contributor.login,
-        role: `${pluralize(
-          (current?.contributions ?? 0) + contributor.contributions,
-          "contribution",
-        )}`,
-        avatar: contributor.avatar_url,
-        url: contributor.html_url,
-        contributions:
-          (current?.contributions ?? 0) + contributor.contributions,
-      });
-    });
-  });
-
-  const projects = repos.map((repo, index) => ({
-    no: pad(index + 1),
-    name: repo.name,
-    desc:
-      repo.description ||
-      "Public repository under the Opensource@NITJ organization.",
-    tag: repo.language || "Mixed",
-    stars: repo.stargazers_count,
-    forks: repo.forks_count,
-    contributors: contributorCounts.get(repo.name) ?? 0,
-    url: repo.html_url,
-  }));
-
-  const contributors = Array.from(contributorTotals.values())
-    .sort((a, b) => b.contributions - a.contributions)
-    .map(({ handle, role, avatar, url }) => ({ handle, role, avatar, url }));
-
-  const commits = commitsByRepo
-    .flat()
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 12);
-
-  return { projects, contributors, commits };
-}
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -426,7 +262,6 @@ export default function Page() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [recentCommits, setRecentCommits] = useState<RecentCommit[]>([]);
   const [isGitHubLoading, setIsGitHubLoading] = useState(true);
-  const isCampusInDisabled = true;
 
   useEffect(() => {
     getPostsFromPostgres().then(setPosts);
@@ -437,7 +272,11 @@ export default function Page() {
 
     setIsGitHubLoading(true);
 
-    fetchGitHubOrgSnapshot()
+    fetch("/api/github")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
       .then(
         ({
           projects: githubProjects,
@@ -803,7 +642,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Active Spotlight - CampusIn */}
+      {/* Active Spotlight - MUNSOC */}
       <section
         id="spotlight"
         className="border-b border-black/15 dark:border-white/15"
@@ -817,16 +656,16 @@ export default function Page() {
             <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight pb-1">
               The
               <br />
-              <span className="italic">CampusIn</span>
+              <span className="italic">MUNSOC</span>
               <br />
-              rebuild.
+              website.
             </h2>
           </div>
           <div className="col-span-12 md:col-span-8 px-4 md:px-8 lg:px-10 py-6 flex items-end">
             <p className="font-serif text-lg md:text-xl text-zinc-700 dark:text-zinc-300 max-w-3xl text-pretty">
-              The campus food delivery platform is moving off a closed website
-              builder and onto a custom, scalable stack - designed, written, and
-              operated by students. Public from day one.
+              We are actively building the official web platform for the Model
+              United Nations (MUN) Society of NITJ, establishing a modern
+              digital home for their conferences and society activities.
             </p>
           </div>
         </div>
@@ -837,20 +676,18 @@ export default function Page() {
               Initiative · in progress
             </div>
             <p className="font-serif text-3xl md:text-4xl lg:text-5xl leading-[1.05] tracking-tight text-pretty">
-              Replacing the old{" "}
-              <span className="text-zinc-400 dark:text-zinc-600 line-through decoration-1">
-                website builder
+              Building a{" "}
+              <span className="italic text-[#C85A41]">
+                bespoke web presence
               </span>{" "}
-              with a{" "}
-              <span className="italic text-[#C85A41]">scalable platform</span>{" "}
-              built end-to-end by the community - orders, kitchens, riders,
-              payments.
+              for the Model United Nations Society of NIT Jalandhar - delegates,
+              registrations, archives, resources.
             </p>
 
             <div className="mt-10 grid grid-cols-2 md:grid-cols-4 border-t border-black/15 dark:border-white/15">
               {[
-                { k: "Status", v: "Phase 01" },
-                { k: "Stack", v: "Next · Postgres" },
+                { k: "Status", v: "Active" },
+                { k: "Stack", v: "Next.js · Tailwind" },
                 { k: "Open issues", v: "0" },
                 { k: "Good first", v: "0" },
               ].map((m, i) => (
@@ -872,40 +709,24 @@ export default function Page() {
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <a
-                href={isCampusInDisabled ? undefined : `${REPO_BASE}/campusin`}
+                href="https://munsoc.opensourcenitj.com"
                 target="_blank"
                 rel="noreferrer"
-                aria-disabled={isCampusInDisabled}
-                tabIndex={isCampusInDisabled ? -1 : 0}
-                className={`group inline-flex items-center gap-3 border border-[#111] dark:border-[#F4F4F0] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors ${
-                  isCampusInDisabled
-                    ? "pointer-events-none cursor-not-allowed opacity-50"
-                    : "hover:bg-[#111] hover:text-[#F7F7F2] dark:hover:bg-[#F4F4F0] dark:hover:text-[#121212]"
-                }`}
+                className="group inline-flex items-center gap-3 border border-[#111] dark:border-[#F4F4F0] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors hover:bg-[#111] hover:text-[#F7F7F2] dark:hover:bg-[#F4F4F0] dark:hover:text-[#121212]"
               >
-                Contribute to CampusIn
+                Visit Website
                 <ArrowUpRight
                   className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   strokeWidth={1.5}
                 />
               </a>
               <a
-                href={
-                  isCampusInDisabled
-                    ? undefined
-                    : `${REPO_BASE}/campusin#readme`
-                }
+                href={`${REPO_BASE}/munsoc`}
                 target="_blank"
                 rel="noreferrer"
-                aria-disabled={isCampusInDisabled}
-                tabIndex={isCampusInDisabled ? -1 : 0}
-                className={`inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors ${
-                  isCampusInDisabled
-                    ? "pointer-events-none cursor-not-allowed text-zinc-500 dark:text-zinc-500 opacity-50"
-                    : "text-zinc-700 dark:text-zinc-300 hover:text-[#C85A41]"
-                }`}
+                className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors text-zinc-700 dark:text-zinc-300 hover:text-[#C85A41]"
               >
-                Read the RFC
+                Contribute
                 <ArrowUpRight className="size-3.5" strokeWidth={1.5} />
               </a>
             </div>
@@ -918,22 +739,26 @@ export default function Page() {
               </div>
               <ol className="space-y-4 font-serif text-lg leading-snug">
                 <li className="flex gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-[#C85A41]">
-                    01 - NOW
+                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
+                    01 - DONE
                   </span>
-                  <span>Auth, vendor onboarding & menu schema.</span>
+                  <span>
+                    Core layouts, society showcase, and information hub.
+                  </span>
                 </li>
                 <li className="flex gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
-                    02 - NEXT
+                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-[#C85A41]">
+                    02 - NOW
                   </span>
-                  <span>Live order routing and kitchen display.</span>
+                  <span>
+                    Delegate registration and event management system.
+                  </span>
                 </li>
                 <li className="flex gap-4">
                   <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
                     03 - NEXT
                   </span>
-                  <span>Rider dispatch, UPI flow, analytics.</span>
+                  <span>Conference archive and debate resource center.</span>
                 </li>
               </ol>
             </div>
@@ -945,10 +770,10 @@ export default function Page() {
               <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
                 {[
                   "Next.js",
-                  "Postgres",
-                  "UPI / Payments",
-                  "Maps",
-                  "Design",
+                  "TypeScript",
+                  "Tailwind CSS",
+                  "UI/UX Design",
+                  "Content Writing",
                   "QA",
                 ].map((t) => (
                   <span

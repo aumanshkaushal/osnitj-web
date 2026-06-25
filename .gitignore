@@ -7,3 +7,6 @@ node_modules
 .next/
 .DS_Store
 tsconfig.tsbuildinfo
+
+public/robots.txt
+public/sitemap.xml
