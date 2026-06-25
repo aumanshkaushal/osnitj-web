@@ -36,41 +36,6 @@ type Contributor = {
   url: string;
 };
 
-type GitHubRepo = {
-  name: string;
-  description: string | null;
-  html_url: string;
-  language: string | null;
-  stargazers_count: number;
-  forks_count: number;
-  archived: boolean;
-  fork: boolean;
-  default_branch: string;
-};
-
-type GitHubContributor = {
-  login: string;
-  avatar_url: string;
-  html_url: string;
-  contributions: number;
-  type: string;
-};
-
-type GitHubCommit = {
-  sha: string;
-  html_url: string;
-  commit: {
-    message: string;
-    author: {
-      name: string;
-      date: string;
-    } | null;
-  };
-  author: {
-    login: string;
-    html_url: string;
-  } | null;
-};
 
 type RecentCommit = {
   sha: string;
@@ -96,7 +61,6 @@ const NAV = [
 
 const ORG_LOGIN = "Opensource-NITJ";
 const REPO_BASE = `https://github.com/${ORG_LOGIN}`;
-const GITHUB_API_BASE = "https://api.github.com";
 
 const ISSUE_DATE = new Date()
   .toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -114,135 +78,7 @@ function pad(n: number, w = 2) {
   return String(n).padStart(w, "0");
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-    },
-  });
 
-  if (!res.ok) {
-    throw new Error(`GitHub request failed: ${res.status}`);
-  }
-
-  return res.json() as Promise<T>;
-}
-
-async function fetchGitHubOrgRepos() {
-  const repos: GitHubRepo[] = [];
-  let page = 1;
-
-  while (true) {
-    const pageRepos = await fetchJson<GitHubRepo[]>(
-      `${GITHUB_API_BASE}/orgs/${ORG_LOGIN}/repos?type=public&sort=pushed&per_page=100&page=${page}`,
-    );
-
-    repos.push(...pageRepos);
-    if (pageRepos.length < 100) break;
-    page += 1;
-  }
-
-  return repos;
-}
-
-async function fetchRepoContributors(repo: string) {
-  return fetchJson<GitHubContributor[]>(
-    `${GITHUB_API_BASE}/repos/${ORG_LOGIN}/${repo}/contributors?per_page=100`,
-  );
-}
-
-async function fetchRepoCommits(repo: GitHubRepo) {
-  const commits = await fetchJson<GitHubCommit[]>(
-    `${GITHUB_API_BASE}/repos/${ORG_LOGIN}/${repo.name}/commits?sha=${repo.default_branch}&per_page=5`,
-  );
-
-  return commits.map((commit) => ({
-    sha: commit.sha,
-    message: commit.commit.message.split("\n")[0] || "Commit",
-    date: commit.commit.author?.date ?? new Date(0).toISOString(),
-    repo: repo.name,
-    repoUrl: repo.html_url,
-    url: commit.html_url,
-    author: commit.author?.login ?? commit.commit.author?.name ?? "unknown",
-    authorUrl: commit.author?.html_url ?? null,
-    branch: repo.default_branch,
-  }));
-}
-
-async function fetchGitHubOrgSnapshot() {
-  const repos = await fetchGitHubOrgRepos();
-  const [contributorsByRepo, commitsByRepo] = await Promise.all([
-    Promise.all(
-      repos.map(async (repo) => {
-        try {
-          return [repo.name, await fetchRepoContributors(repo.name)] as const;
-        } catch {
-          return [repo.name, []] as const;
-        }
-      }),
-    ),
-    Promise.all(
-      repos.map(async (repo) => {
-        try {
-          return await fetchRepoCommits(repo);
-        } catch {
-          return [];
-        }
-      }),
-    ),
-  ]);
-
-  const contributorTotals = new Map<
-    string,
-    Contributor & { contributions: number }
-  >();
-  const contributorCounts = new Map<string, number>();
-
-  contributorsByRepo.forEach(([repoName, repoContributors]) => {
-    contributorCounts.set(repoName, repoContributors.length);
-
-    repoContributors.forEach((contributor) => {
-      if (!contributor.login || contributor.type === "Bot") return;
-
-      const current = contributorTotals.get(contributor.login);
-      contributorTotals.set(contributor.login, {
-        handle: contributor.login,
-        role: `${pluralize(
-          (current?.contributions ?? 0) + contributor.contributions,
-          "contribution",
-        )}`,
-        avatar: contributor.avatar_url,
-        url: contributor.html_url,
-        contributions:
-          (current?.contributions ?? 0) + contributor.contributions,
-      });
-    });
-  });
-
-  const projects = repos.map((repo, index) => ({
-    no: pad(index + 1),
-    name: repo.name,
-    desc:
-      repo.description ||
-      "Public repository under the Opensource@NITJ organization.",
-    tag: repo.language || "Mixed",
-    stars: repo.stargazers_count,
-    forks: repo.forks_count,
-    contributors: contributorCounts.get(repo.name) ?? 0,
-    url: repo.html_url,
-  }));
-
-  const contributors = Array.from(contributorTotals.values())
-    .sort((a, b) => b.contributions - a.contributions)
-    .map(({ handle, role, avatar, url }) => ({ handle, role, avatar, url }));
-
-  const commits = commitsByRepo
-    .flat()
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 12);
-
-  return { projects, contributors, commits };
-}
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -436,7 +272,11 @@ export default function Page() {
 
     setIsGitHubLoading(true);
 
-    fetchGitHubOrgSnapshot()
+    fetch("/api/github")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
       .then(
         ({
           projects: githubProjects,
