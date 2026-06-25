@@ -426,7 +426,6 @@ export default function Page() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [recentCommits, setRecentCommits] = useState<RecentCommit[]>([]);
   const [isGitHubLoading, setIsGitHubLoading] = useState(true);
-  const isCampusInDisabled = true;
 
   useEffect(() => {
     getPostsFromPostgres().then(setPosts);
@@ -803,7 +802,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Active Spotlight - CampusIn */}
+      {/* Active Spotlight - MUNSOC */}
       <section
         id="spotlight"
         className="border-b border-black/15 dark:border-white/15"
@@ -817,16 +816,16 @@ export default function Page() {
             <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight pb-1">
               The
               <br />
-              <span className="italic">CampusIn</span>
+              <span className="italic">MUNSOC</span>
               <br />
-              rebuild.
+              website.
             </h2>
           </div>
           <div className="col-span-12 md:col-span-8 px-4 md:px-8 lg:px-10 py-6 flex items-end">
             <p className="font-serif text-lg md:text-xl text-zinc-700 dark:text-zinc-300 max-w-3xl text-pretty">
-              The campus food delivery platform is moving off a closed website
-              builder and onto a custom, scalable stack - designed, written, and
-              operated by students. Public from day one.
+              We are actively building the official web platform for the Model
+              United Nations (MUN) Society of NITJ, establishing a modern
+              digital home for their conferences and society activities.
             </p>
           </div>
         </div>
@@ -837,20 +836,18 @@ export default function Page() {
               Initiative · in progress
             </div>
             <p className="font-serif text-3xl md:text-4xl lg:text-5xl leading-[1.05] tracking-tight text-pretty">
-              Replacing the old{" "}
-              <span className="text-zinc-400 dark:text-zinc-600 line-through decoration-1">
-                website builder
+              Building a{" "}
+              <span className="italic text-[#C85A41]">
+                bespoke web presence
               </span>{" "}
-              with a{" "}
-              <span className="italic text-[#C85A41]">scalable platform</span>{" "}
-              built end-to-end by the community - orders, kitchens, riders,
-              payments.
+              for the Model United Nations Society of NIT Jalandhar - delegates,
+              registrations, archives, resources.
             </p>
 
             <div className="mt-10 grid grid-cols-2 md:grid-cols-4 border-t border-black/15 dark:border-white/15">
               {[
-                { k: "Status", v: "Phase 01" },
-                { k: "Stack", v: "Next · Postgres" },
+                { k: "Status", v: "Active" },
+                { k: "Stack", v: "Next.js · Tailwind" },
                 { k: "Open issues", v: "0" },
                 { k: "Good first", v: "0" },
               ].map((m, i) => (
@@ -872,40 +869,24 @@ export default function Page() {
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <a
-                href={isCampusInDisabled ? undefined : `${REPO_BASE}/campusin`}
+                href="https://munsoc.opensourcenitj.com"
                 target="_blank"
                 rel="noreferrer"
-                aria-disabled={isCampusInDisabled}
-                tabIndex={isCampusInDisabled ? -1 : 0}
-                className={`group inline-flex items-center gap-3 border border-[#111] dark:border-[#F4F4F0] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors ${
-                  isCampusInDisabled
-                    ? "pointer-events-none cursor-not-allowed opacity-50"
-                    : "hover:bg-[#111] hover:text-[#F7F7F2] dark:hover:bg-[#F4F4F0] dark:hover:text-[#121212]"
-                }`}
+                className="group inline-flex items-center gap-3 border border-[#111] dark:border-[#F4F4F0] px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors hover:bg-[#111] hover:text-[#F7F7F2] dark:hover:bg-[#F4F4F0] dark:hover:text-[#121212]"
               >
-                Contribute to CampusIn
+                Visit Website
                 <ArrowUpRight
                   className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   strokeWidth={1.5}
                 />
               </a>
               <a
-                href={
-                  isCampusInDisabled
-                    ? undefined
-                    : `${REPO_BASE}/campusin#readme`
-                }
+                href={`${REPO_BASE}/munsoc`}
                 target="_blank"
                 rel="noreferrer"
-                aria-disabled={isCampusInDisabled}
-                tabIndex={isCampusInDisabled ? -1 : 0}
-                className={`inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors ${
-                  isCampusInDisabled
-                    ? "pointer-events-none cursor-not-allowed text-zinc-500 dark:text-zinc-500 opacity-50"
-                    : "text-zinc-700 dark:text-zinc-300 hover:text-[#C85A41]"
-                }`}
+                className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors text-zinc-700 dark:text-zinc-300 hover:text-[#C85A41]"
               >
-                Read the RFC
+                Contribute
                 <ArrowUpRight className="size-3.5" strokeWidth={1.5} />
               </a>
             </div>
@@ -918,22 +899,26 @@ export default function Page() {
               </div>
               <ol className="space-y-4 font-serif text-lg leading-snug">
                 <li className="flex gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-[#C85A41]">
-                    01 - NOW
+                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
+                    01 - DONE
                   </span>
-                  <span>Auth, vendor onboarding & menu schema.</span>
+                  <span>
+                    Core layouts, society showcase, and information hub.
+                  </span>
                 </li>
                 <li className="flex gap-4">
-                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
-                    02 - NEXT
+                  <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-[#C85A41]">
+                    02 - NOW
                   </span>
-                  <span>Live order routing and kitchen display.</span>
+                  <span>
+                    Delegate registration and event management system.
+                  </span>
                 </li>
                 <li className="flex gap-4">
                   <span className="font-mono text-[10px] tracking-[0.2em] mt-2 text-zinc-500 dark:text-zinc-500">
                     03 - NEXT
                   </span>
-                  <span>Rider dispatch, UPI flow, analytics.</span>
+                  <span>Conference archive and debate resource center.</span>
                 </li>
               </ol>
             </div>
@@ -945,10 +930,10 @@ export default function Page() {
               <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
                 {[
                   "Next.js",
-                  "Postgres",
-                  "UPI / Payments",
-                  "Maps",
-                  "Design",
+                  "TypeScript",
+                  "Tailwind CSS",
+                  "UI/UX Design",
+                  "Content Writing",
                   "QA",
                 ].map((t) => (
                   <span
