@@ -13,7 +13,7 @@ import {
   Flag,
   Search,
 } from "lucide-react";
-import { getPostsFromPostgres, type BlogPost } from "@/lib/blog";
+import { getDispatchesFromPostgres, type Dispatch } from "@/lib/dispatch";
 import Link from "next/link";
 import { NavMenu } from "@/components/nav-menu";
 import { useTheme } from "next-themes";
@@ -257,14 +257,14 @@ function ActivityStream({
 
 export default function Page() {
   const clock = useClock();
-  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [dispatches, setDispatches] = useState<Dispatch[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [recentCommits, setRecentCommits] = useState<RecentCommit[]>([]);
   const [isGitHubLoading, setIsGitHubLoading] = useState(true);
 
   useEffect(() => {
-    getPostsFromPostgres().then(setPosts);
+    getDispatchesFromPostgres().then(setDispatches);
   }, []);
 
   useEffect(() => {
@@ -888,7 +888,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Dispatches - Blog */}
+      {/* Dispatches */}
       <section
         id="dispatches"
         className="border-b border-black/15 dark:border-white/15"
@@ -899,7 +899,7 @@ export default function Page() {
               06 / Dispatches
             </div>
             <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight pb-1">
-              Blog &amp;
+              Dispatches &amp;
               <br />
               <span className="italic">updates.</span>
             </h2>
@@ -921,18 +921,18 @@ export default function Page() {
                 <div className="col-span-3 px-5 py-3">Author</div>
               </div>
 
-              {/* Posts List (first 5) */}
-              {posts.slice(0, 5).map((post) => (
+              {/* Dispatches List (first 5) */}
+              {dispatches.slice(0, 5).map((dispatch) => (
                 <Link
-                  key={post.id}
-                  href={`/blog/${post.slug}`}
+                  key={dispatch.id}
+                  href={`/dispatch/${dispatch.slug}`}
                   className="flex flex-col lg:grid lg:grid-cols-12 lg:items-stretch border-b border-black/15 dark:border-white/15 last:border-b-0 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
                 >
                   {/* Mobile layout */}
                   <div className="lg:hidden px-4 py-5 flex flex-col gap-3">
                     <div className="flex items-baseline justify-between gap-3">
                       <h3 className="font-serif text-xl md:text-2xl leading-[1.15] tracking-tight text-left pb-1">
-                        {post.title}
+                        {dispatch.title}
                       </h3>
                       <ArrowUpRight
                         className="size-4 text-zinc-500 dark:text-zinc-500 transition-all duration-300 shrink-0"
@@ -941,22 +941,22 @@ export default function Page() {
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 dark:text-zinc-300">
                       <span>
-                        {new Date(post.date).toLocaleDateString("en-US", {
+                        {new Date(dispatch.date).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
                         })}
                       </span>
                       <span>·</span>
-                      <span>{post.readTime} min read</span>
+                      <span>{dispatch.readTime} min read</span>
                       <span>·</span>
-                      <span>@{post.author.github}</span>
+                      <span>@{dispatch.author.github}</span>
                     </div>
                   </div>
 
                   {/* Desktop layout */}
                   <div className="hidden lg:flex col-span-2 px-5 py-5 border-r border-black/15 dark:border-white/15 items-center font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                    {new Date(post.date).toLocaleDateString("en-US", {
+                    {new Date(dispatch.date).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
@@ -964,12 +964,12 @@ export default function Page() {
                   </div>
                   <div className="hidden lg:flex col-span-7 px-5 py-5 border-r border-black/15 dark:border-white/15 items-center">
                     <span className="font-serif text-lg leading-[1.15] tracking-tight pb-1">
-                      {post.title}
+                      {dispatch.title}
                     </span>
                   </div>
                   <div className="hidden lg:flex col-span-3 px-5 py-5 items-center justify-between">
                     <span className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-                      @{post.author.github}
+                      @{dispatch.author.github}
                     </span>
                     <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-500 flex items-center gap-2">
                       View
@@ -980,14 +980,14 @@ export default function Page() {
               ))}
 
               {/* View All Button */}
-              {posts.length > 5 && (
+              {dispatches.length > 5 && (
                 <Link
-                  href="/blog"
+                  href="/dispatches"
                   className="flex flex-col lg:grid lg:grid-cols-12 lg:items-center border-black/15 dark:border-white/15 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
                 >
                   <div className="col-span-12 px-5 py-5 flex items-center justify-between font-serif text-base lg:text-lg leading-[1.15] tracking-tight pb-1">
                     <span>
-                      View all <span className="font-mono">{posts.length}</span>{" "}
+                      View all <span className="font-mono">{dispatches.length}</span>{" "}
                       dispatches
                     </span>
                     <ArrowUpRight

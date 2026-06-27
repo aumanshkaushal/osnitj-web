@@ -1,4 +1,4 @@
-create table if not exists public.blog_posts (
+create table if not exists public.dispatches (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
   title text not null,
@@ -11,6 +11,5 @@ create table if not exists public.blog_posts (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists blog_posts_date_idx
-  on public.blog_posts (date desc);
-
+create index if not exists dispatches_date_idx
+  on public.dispatches (date desc);

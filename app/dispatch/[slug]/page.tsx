@@ -5,35 +5,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Moon, Sun, Link2 } from "lucide-react";
-import { getPostBySlug, type BlogPost } from "@/lib/blog";
-import { useTheme } from "next-themes";
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const dark = mounted && resolvedTheme === "dark";
-
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(dark ? "light" : "dark")}
-      className="h-9 w-9 flex items-center justify-center border border-black/10 dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
-      aria-label="Toggle Theme"
-    >
-      {dark ? (
-        <Sun className="size-4" strokeWidth={1.5} />
-      ) : (
-        <Moon className="size-4" strokeWidth={1.5} />
-      )}
-    </button>
-  );
-}
+import { ArrowLeft, Link2 } from "lucide-react";
+import { getDispatchBySlug, type Dispatch } from "@/lib/dispatch";
+import ThemeToggle from "@/components/theme-toggle";
 
 function extractHeadings(markdown: string) {
   const regex = /^##\s(.+)$/gm;
@@ -82,17 +56,17 @@ function getHeadingId(text: string) {
     .replace(/\s+/g, "-");
 }
 
-export default function BlogPostPage() {
+export default function DispatchPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [post, setPost] = useState<BlogPost | null>(null);
+  const [dispatch, setDispatch] = useState<Dispatch | null>(null);
   const [loading, setLoading] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
-    getPostBySlug(slug).then((p) => {
-      setPost(p);
+    getDispatchBySlug(slug).then((d) => {
+      setDispatch(d);
       setLoading(false);
     });
   }, [slug]);
@@ -113,8 +87,8 @@ export default function BlogPostPage() {
   }, []);
 
   const headings = useMemo(() => {
-    return post ? extractHeadings(post.markdownContent) : [];
-  }, [post]);
+    return dispatch ? extractHeadings(dispatch.markdownContent) : [];
+  }, [dispatch]);
 
   if (loading) {
     return (
@@ -129,7 +103,7 @@ export default function BlogPostPage() {
     );
   }
 
-  if (!post) {
+  if (!dispatch) {
     return (
       <main className="min-h-screen bg-[#F7F7F2] dark:bg-[#101014] text-[#111] dark:text-[#ECE7DF] flex items-center justify-center px-6 transition-colors antialiased">
         <div className="text-center">
@@ -137,11 +111,11 @@ export default function BlogPostPage() {
             className="text-5xl mb-5"
             style={{ fontFamily: "var(--font-lora)" }}
           >
-            Post not found
+            Dispatch not found
           </h1>
 
           <Link
-            href="/blog"
+            href="/dispatches"
             className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#C85A41]"
             style={{ fontFamily: "var(--font-inter)" }}
           >
@@ -168,7 +142,7 @@ export default function BlogPostPage() {
       <header className="border-b border-black/10 dark:border-white/[0.06] backdrop-blur-xl sticky top-0 z-40 bg-[#F7F7F2]/80 dark:bg-[#101014]/80">
         <div className="max-w-[1400px] mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
           <Link
-            href="/blog"
+            href="/dispatches"
             className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-500 hover:text-[#C85A41] transition-colors"
             style={{ fontFamily: "var(--font-inter)" }}
           >
@@ -200,7 +174,7 @@ export default function BlogPostPage() {
               className="text-[3.2rem] md:text-[4.5rem] leading-[1.05] tracking-[-0.03em] text-[#111] dark:text-[#F5F1EA] text-balance font-semibold"
               style={{ fontFamily: "var(--font-lora)" }}
             >
-              {post.title}
+              {dispatch.title}
             </h1>
 
             {/* Info */}
@@ -211,24 +185,24 @@ export default function BlogPostPage() {
               <div>
                 By{" "}
                 <a
-                  href={`https://github.com/${post.author.github}`}
+                  href={`https://github.com/${dispatch.author.github}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[#C85A41] hover:underline"
                 >
-                  @{post.author.github}
+                  @{dispatch.author.github}
                 </a>
               </div>
 
               <div>
-                {new Date(post.date).toLocaleDateString("en-US", {
+                {new Date(dispatch.date).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
                 })}
               </div>
 
-              <div>{post.readTime} min read</div>
+              <div>{dispatch.readTime} min read</div>
             </div>
 
             {/* Content */}
@@ -439,7 +413,7 @@ export default function BlogPostPage() {
                   ),
                 }}
               >
-                {post.markdownContent}
+                {dispatch.markdownContent}
               </ReactMarkdown>
             </div>
           </div>

@@ -1,4 +1,4 @@
-export type BlogPost = {
+export type Dispatch = {
   id: string;
   slug: string;
   title: string;
@@ -8,7 +8,7 @@ export type BlogPost = {
   markdownContent: string;
 };
 
-async function fetchBlogJson<T>(path: string): Promise<T> {
+async function fetchDispatchJson<T>(path: string): Promise<T> {
   const baseUrl =
     typeof window === "undefined"
       ? process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
@@ -19,20 +19,20 @@ async function fetchBlogJson<T>(path: string): Promise<T> {
   });
 
   if (!res.ok) {
-    throw new Error(`Blog request failed: ${res.status}`);
+    throw new Error(`Dispatch request failed: ${res.status}`);
   }
 
   return res.json() as Promise<T>;
 }
 
-export async function getPostsFromPostgres(): Promise<BlogPost[]> {
-  return fetchBlogJson<BlogPost[]>("/api/blog");
+export async function getDispatchesFromPostgres(): Promise<Dispatch[]> {
+  return fetchDispatchJson<Dispatch[]>("/api/dispatches");
 }
 
-export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+export async function getDispatchBySlug(slug: string): Promise<Dispatch | null> {
   try {
-    return await fetchBlogJson<BlogPost>(
-      `/api/blog/${encodeURIComponent(slug)}`,
+    return await fetchDispatchJson<Dispatch>(
+      `/api/dispatch/${encodeURIComponent(slug)}`,
     );
   } catch {
     return null;
