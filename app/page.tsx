@@ -36,7 +36,6 @@ type Contributor = {
   url: string;
 };
 
-
 type RecentCommit = {
   sha: string;
   message: string;
@@ -54,6 +53,7 @@ const NAV = [
   { label: "Spotlight", href: "#spotlight" },
   { label: "Contributors", href: "#contributors" },
   { label: "Activity", href: "#activity" },
+  { label: "Sprints", href: "#sprints" },
   { label: "Dispatches", href: "#dispatches" },
   { label: "Manifesto", href: "#manifesto" },
   { label: "Contact", href: "#contact" },
@@ -77,8 +77,6 @@ function pluralize(n: number, singular: string, plural = `${singular}s`) {
 function pad(n: number, w = 2) {
   return String(n).padStart(w, "0");
 }
-
-
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -253,18 +251,210 @@ function ActivityStream({
       </ol>
     </div>
   );
+}interface SprintDay {
+  dateNum: number;
+  month: string;
+  dayName: string;
+  status: "completed" | "active" | "upcoming";
+  dateStr: string;
 }
+
+interface DbSprintTask {
+  id: string;
+  task_text: string;
+  status: "completed" | "in-progress" | "pending";
+  pr_link?: string | null;
+}
+
+interface DbSprintProject {
+  id: string;
+  project_name: string;
+  github_repo: string;
+  tasks: DbSprintTask[];
+}
+
+interface DbSprint {
+  id: string;
+  sprint_number: number;
+  start_date: string;
+  end_date: string;
+  status: "retro" | "active" | "upcoming";
+  retro_notes?: string | null;
+  projects: DbSprintProject[];
+}
+
+function getSprintStatus(startDateStr: string, endDateStr: string): "retro" | "active" | "upcoming" {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(startDateStr);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDateStr);
+  end.setHours(23, 59, 59, 999);
+
+  if (today < start) return "upcoming";
+  if (today > end) return "retro";
+  return "active";
+}
+
+function getSprintDays(startDateStr: string, status: "retro" | "active" | "upcoming"): SprintDay[] {
+  const days: SprintDay[] = [];
+  const startDate = new Date(startDateStr);
+  
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May"];
+  
+  for (let i = 0; i < 7; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setUTCDate(startDate.getUTCDate() + i);
+    
+    const dateNum = currentDate.getUTCDate();
+    const month = months[currentDate.getUTCMonth()];
+    const dayName = dayNames[currentDate.getUTCDay()];
+    
+    const year = currentDate.getUTCFullYear();
+    const mm = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(dateNum).padStart(2, '0');
+    const dateStr = `${year}-${mm}-${dd}`;
+    
+    days.push({
+      dateNum,
+      month,
+      dayName,
+      status: status === "retro" ? "completed" : status,
+      dateStr
+    });
+  }
+  return days;
+}
+
+const FALLBACK_SPRINTS: DbSprint[] = [
+  {
+    id: "sprint-1",
+    sprint_number: 1,
+    start_date: "2026-06-21T00:00:00Z",
+    end_date: "2026-06-27T23:59:59Z",
+    status: "retro",
+    retro_notes: "First successful ship cycle of osnitj workspaces.",
+    projects: [
+      {
+        id: "proj-1-0",
+        project_name: "asknitj",
+        github_repo: "asknitj",
+        tasks: [
+          { id: "task-1-0-0", task_text: "initial core search setup", status: "completed" },
+          { id: "task-1-0-1", task_text: "integrate context formatting parser", status: "completed" }
+        ]
+      },
+      {
+        id: "proj-1-1",
+        project_name: "guessr",
+        github_repo: "guessr",
+        tasks: [
+          { id: "task-1-1-0", task_text: "setup basic routing & map views", status: "completed" },
+          { id: "task-1-1-1", task_text: "implement location guess validation", status: "completed" }
+        ]
+      },
+      {
+        id: "proj-1-2",
+        project_name: "osnitj-web",
+        github_repo: "osnitj-web",
+        tasks: [
+          { id: "task-1-2-0", task_text: "make admin panel base & auth", status: "completed" },
+          { id: "task-1-2-1", task_text: "seed default admin user credentials", status: "completed" },
+          { id: "task-1-2-2", task_text: "rename all blog instances to dispatch", status: "completed" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "sprint-2",
+    sprint_number: 2,
+    start_date: "2026-06-28T00:00:00Z",
+    end_date: "2026-07-04T23:59:59Z",
+    status: "active",
+    projects: [
+      {
+        id: "proj-2-0",
+        project_name: "asknitj",
+        github_repo: "asknitj",
+        tasks: [
+          { id: "task-2-0-0", task_text: "refine context calls", status: "in-progress" as any },
+          { id: "task-2-0-1", task_text: "give structured data in the form of messages in chatCompletions for commentThreads and dMThreads", status: "pending" as any }
+        ]
+      },
+      {
+        id: "proj-2-1",
+        project_name: "guessr",
+        github_repo: "guessr",
+        tasks: [
+          { id: "task-2-1-0", task_text: "make the game playable by completing photo mode", status: "in-progress" as any }
+        ]
+      },
+      {
+        id: "proj-2-2",
+        project_name: "osnitj-web",
+        github_repo: "osnitj-web",
+        tasks: [
+          { id: "task-2-2-0", task_text: "add sprints section to website", status: "completed" as any }
+        ]
+      }
+    ]
+  },
+  {
+    id: "sprint-3",
+    sprint_number: 3,
+    start_date: "2026-07-05T00:00:00Z",
+    end_date: "2026-07-11T23:59:59Z",
+    status: "upcoming",
+    projects: []
+  }
+];
 
 export default function Page() {
   const clock = useClock();
   const [dispatches, setDispatches] = useState<Dispatch[]>([]);
+  const [sprints, setSprints] = useState<DbSprint[]>(FALLBACK_SPRINTS);
+  const [selectedSprintId, setSelectedSprintId] = useState(2);
+  const visibleSprints = useMemo(() => {
+    const activeIndex = sprints.findIndex((s) => getSprintStatus(s.start_date, s.end_date) === "active");
+    if (activeIndex === -1) return sprints.slice(0, 3);
+    return sprints.filter(
+      (_, idx) => idx >= activeIndex - 1 && idx <= activeIndex + 1,
+    );
+  }, [sprints]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [recentCommits, setRecentCommits] = useState<RecentCommit[]>([]);
   const [isGitHubLoading, setIsGitHubLoading] = useState(true);
+  const [todayStr, setTodayStr] = useState("");
+
+  useEffect(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setTodayStr(`${year}-${mm}-${dd}`);
+  }, []);
 
   useEffect(() => {
     getDispatchesFromPostgres().then(setDispatches);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/sprints")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSprints(data);
+          const active = data.find((s) => getSprintStatus(s.start_date, s.end_date) === "active");
+          if (active) {
+            setSelectedSprintId(active.sprint_number);
+          } else {
+            setSelectedSprintId(data[0].sprint_number);
+          }
+        }
+      })
+      .catch((err) => console.error("Error loading sprints:", err));
   }, []);
 
   useEffect(() => {
@@ -888,6 +1078,250 @@ export default function Page() {
         </div>
       </section>
 
+      {/* Sprints Section */}
+      <section
+        id="sprints"
+        className="border-b border-black/15 dark:border-white/15 overflow-hidden"
+      >
+        <div className="grid grid-cols-12">
+          {/* Left Editorial Masthead */}
+          <div className="col-span-12 lg:col-span-4 border-b lg:border-b-0 lg:border-r border-black/15 dark:border-white/15 px-4 md:px-8 lg:px-10 py-10 flex flex-col justify-between min-h-[350px]">
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-400">
+                06 / Sprints
+              </div>
+              <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight pb-1">
+                Weekly
+                <br />
+                <span className="italic text-[#C85A41]">shipments.</span>
+              </h2>
+              <p className="mt-6 font-serif text-base text-zinc-700 dark:text-zinc-300 text-pretty leading-relaxed">
+                A week-by-week editorial log documenting core features shipped,
+                active sprints in progress, and planned cycles.
+              </p>
+            </div>
+
+{/* Issue Selector Index (Magazine style) */}
+            <div className="mt-10 pt-6 border-t border-black/10 dark:border-white/10 font-mono text-[10px] space-y-3">
+              <div className="uppercase text-zinc-400 tracking-wider font-bold">
+                Select Cycle Issue
+              </div>
+              <div className="flex flex-col gap-2">
+                {visibleSprints.map((sprint) => {
+                  const status = getSprintStatus(sprint.start_date, sprint.end_date);
+                  return (
+                    <button
+                      key={sprint.id}
+                      onClick={() => setSelectedSprintId(sprint.sprint_number)}
+                      className={`text-left uppercase tracking-wider flex items-center justify-between group transition-colors cursor-pointer ${
+                        selectedSprintId === sprint.sprint_number
+                          ? "text-[#C85A41] font-bold"
+                          : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          →
+                        </span>
+                        ISSUE {String(sprint.sprint_number).padStart(2, '0')} · Sprint #{sprint.sprint_number}
+                      </span>
+                      <span className="text-[9px] opacity-60">
+                        {status === "active" ? "[NOW]" : status === "retro" ? "[PAST]" : "[NEXT]"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Planner & Ledger Spread */}
+          <div className="col-span-12 lg:col-span-8 flex flex-col divide-y divide-black/15 dark:divide-white/15">
+            {/* Weekly Planner Spreadsheet (Horizontal Columns) */}
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-7 min-w-[700px] divide-x divide-black/15 dark:divide-white/15 font-mono">
+                {(() => {
+                  const selectedSprint =
+                    sprints.find((s) => s.sprint_number === selectedSprintId) ||
+                    sprints[1] ||
+                    FALLBACK_SPRINTS[1];
+                  const status = getSprintStatus(selectedSprint.start_date, selectedSprint.end_date);
+                  const days = getSprintDays(selectedSprint.start_date, status);
+                  return days.map((day, idx) => {
+                    const isToday = day.dateStr === todayStr;
+                    const isPast = day.dateStr < todayStr;
+                    const isSprintActive = status === "active";
+
+                    return (
+                      <button
+                        key={day.dateStr}
+                        onClick={() => setSelectedSprintId(selectedSprint.sprint_number)}
+                        className={`p-4 flex flex-col justify-between text-left h-24 transition-all duration-300 relative group cursor-pointer ${
+                          isSprintActive
+                            ? isToday
+                              ? "bg-[#C85A41]/[0.08] dark:bg-[#C85A41]/[0.12] z-10 border-[#C85A41]/30"
+                              : "bg-[#C85A41]/[0.02] dark:bg-[#C85A41]/[0.04] border-black/10 dark:border-white/10"
+                            : "bg-transparent hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
+                        }`}
+                      >
+                        {/* Cell Top: Day Name and Date */}
+                        <div className="w-full flex justify-between items-baseline">
+                          <span className="font-serif text-sm italic text-zinc-500 group-hover:text-[#C85A41] transition-colors">
+                            {day.dayName}
+                          </span>
+                          <span
+                            className={`text-xl font-bold tracking-tighter ${
+                              isToday
+                                ? "text-[#C85A41]"
+                                : "text-zinc-600 dark:text-zinc-400"
+                            }`}
+                          >
+                            {day.dateNum}
+                          </span>
+                        </div>
+
+                        {/* Cell Bottom: Status Indicator */}
+                        <div className="w-full flex justify-between items-center text-[8px] uppercase tracking-wider text-zinc-400">
+                          <span>{day.month}</span>
+                          {isToday ? (
+                            <span className="flex items-center gap-1 text-[#C85A41] font-bold">
+                              <span className="size-1.5 bg-[#C85A41] rounded-full inline-block animate-ping"></span>
+                              TODAY
+                            </span>
+                          ) : isPast || day.status === "completed" ? (
+                            <span className="text-zinc-500 font-bold">
+                              ✓ SHIPPED
+                            </span>
+                          ) : (
+                            <span>PLANNED</span>
+                          )}
+                        </div>
+
+                        {/* Aesthetic top boundary line for hover feedback */}
+                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-transparent group-hover:bg-[#C85A41] transition-colors duration-300" />
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            {/* Newspaper style Columns for Project targets */}
+            {(() => {
+              const selectedSprint =
+                sprints.find((s) => s.sprint_number === selectedSprintId) ||
+                sprints[1] ||
+                FALLBACK_SPRINTS[1];
+
+              const formattedStart = new Date(selectedSprint.start_date).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                timeZone: "UTC",
+              });
+              const formattedEnd = new Date(selectedSprint.end_date).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                timeZone: "UTC",
+              });
+
+              return (
+                <div className="p-6 md:p-8 lg:p-10 bg-white dark:bg-[#171717] flex-1">
+                  {/* Master Details Header */}
+                  <div className="flex flex-col md:flex-row md:items-baseline justify-between border-b border-black/15 dark:border-white/15 pb-4 mb-8 font-mono text-[10px] uppercase tracking-wider text-zinc-500 gap-2">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-zinc-900 dark:text-white font-bold text-xs">
+                        Sprint #{selectedSprint.sprint_number} Ledger
+                      </span>
+                    </div>
+                    <div>
+                      CYCLE WINDOW: {formattedStart} – {formattedEnd}
+                    </div>
+                  </div>
+
+                  {/* 3-Column Newspaper Project Grid */}
+                  {selectedSprint.projects.length === 0 ? (
+                    <div className="text-center py-12 font-mono text-zinc-500 text-xs">
+                      <p className="italic mb-2">Scope not yet active.</p>
+                      <p className="uppercase tracking-wider text-[10px] text-[#C85A41] font-bold">
+                        Cycle targets will be locked on Saturday, {formattedStart}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:divide-x divide-black/15 dark:divide-white/15 md:-mx-4">
+                      {selectedSprint.projects.map((group, gIdx) => (
+                        <div
+                          key={group.project_name}
+                          className={`md:px-4 ${gIdx > 0 ? "" : "md:pl-0"}`}
+                        >
+                          {/* Clickable project headline (Github link) */}
+                          <a
+                            href={`https://github.com/Opensource-NITJ/${group.github_repo}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group inline-flex items-baseline gap-2 mb-4 hover:text-[#C85A41] transition-colors"
+                          >
+                            <h3 className="font-serif text-3xl font-medium tracking-tight border-b border-black/5 group-hover:border-[#C85A41] transition-colors pb-1">
+                              {group.project_name}
+                            </h3>
+                            <span className="text-[10px] text-zinc-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300">
+                              ↗
+                            </span>
+                          </a>
+
+                          {/* Tasks under project */}
+                          <ul className="space-y-4 font-mono text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-300">
+                            {group.tasks.map((task, tIdx) => {
+                              const isRetro = getSprintStatus(selectedSprint.start_date, selectedSprint.end_date) === "retro";
+                              const isCompleted = task.status === "completed";
+                              const isCarried = task.status === "carried-forward";
+                              const isRejected = task.status === "rejected";
+
+                              return (
+                                <li
+                                  key={tIdx}
+                                  className="flex items-start gap-2.5 group/item transition-colors hover:text-zinc-900 dark:hover:text-white"
+                                >
+                                  {/* Bullet symbol */}
+                                  <span
+                                    className={`mt-0.5 select-none font-bold ${
+                                      isRetro
+                                        ? isCompleted
+                                          ? "text-zinc-400"
+                                          : isCarried
+                                          ? "text-[#C85A41]"
+                                          : isRejected
+                                          ? "text-red-500/80"
+                                          : "text-[#C85A41]"
+                                        : "text-[#C85A41]"
+                                    }`}
+                                  >
+                                    {isRetro ? (isCompleted ? "✓" : isCarried ? "↳" : isRejected ? "✗" : "—") : "—"}
+                                  </span>
+
+                                  <span
+                                    className={`${
+                                      isRetro && (isCompleted || isRejected)
+                                        ? `text-zinc-400 dark:text-zinc-500 line-through ${isRejected ? "decoration-red-500/40" : "decoration-zinc-400/40"}`
+                                        : ""
+                                    }`}
+                                  >
+                                    {task.task_text}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      </section>
+
       {/* Dispatches */}
       <section
         id="dispatches"
@@ -896,7 +1330,7 @@ export default function Page() {
         <div className="grid grid-cols-12">
           <div className="col-span-12 md:col-span-4 border-b md:border-b-0 md:border-r border-black/15 dark:border-white/15 px-4 md:px-8 lg:px-10 py-10">
             <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-400">
-              06 / Dispatches
+              07 / Dispatches
             </div>
             <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight pb-1">
               Dispatches &amp;
@@ -987,7 +1421,8 @@ export default function Page() {
                 >
                   <div className="col-span-12 px-5 py-5 flex items-center justify-between font-serif text-base lg:text-lg leading-[1.15] tracking-tight pb-1">
                     <span>
-                      View all <span className="font-mono">{dispatches.length}</span>{" "}
+                      View all{" "}
+                      <span className="font-mono">{dispatches.length}</span>{" "}
                       dispatches
                     </span>
                     <ArrowUpRight
@@ -1010,7 +1445,7 @@ export default function Page() {
         <div className="grid grid-cols-12">
           <div className="col-span-12 md:col-span-4 border-b md:border-b-0 md:border-r border-black/15 dark:border-white/15 px-4 md:px-8 lg:px-10 py-10">
             <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-400">
-              07 / Manifesto
+              08 / Manifesto
             </div>
             <p className="mt-6 font-serif text-2xl md:text-3xl leading-[1.15] text-pretty">
               We don&apos;t ship demos.

@@ -14,8 +14,8 @@ export default function AdminHubPage() {
       title: "Sprints & Goals",
       description: "Plan development sprints, track active progress, and maintain collaborative goals.",
       icon: Calendar,
-      href: "#",
-      status: "soon",
+      href: "/admin/sprints",
+      status: "active",
     },
   ];
 

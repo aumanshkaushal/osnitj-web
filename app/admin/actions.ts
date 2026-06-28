@@ -5,6 +5,13 @@ import { revalidatePath } from "next/cache";
 import { getAdminByUsername } from "@/lib/admin-db";
 import { verifyPassword, signToken, verifyToken } from "@/lib/auth";
 import { createDispatchInDb, updateDispatchInDb, deleteDispatchFromDb } from "@/lib/dispatch-db";
+import {
+  createSprintInDb,
+  addProjectToSprintInDb,
+  addTaskToProjectInDb,
+  updateTaskStatusInDb,
+  deleteSprintFromDb
+} from "@/lib/sprints-db";
 
 const SESSION_COOKIE_NAME = "admin_session";
 
@@ -139,5 +146,131 @@ export async function deleteDispatchAction(id: string) {
   } catch (error) {
     console.error("Delete dispatch action error:", error);
     return { error: "Failed to delete dispatch." };
+  }
+}
+
+export async function createSprintAction(
+  sprintNumber: number,
+  startDate: string,
+  endDate: string
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    const payload = {
+      sprint_number: Number(sprintNumber),
+      start_date: new Date(startDate).toISOString(),
+      end_date: new Date(endDate).toISOString(),
+      status: "upcoming" as any
+    };
+
+    const newSprint = await createSprintInDb(payload);
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Sprint cycle created successfully!", sprint: newSprint };
+  } catch (error: any) {
+    console.error("Create sprint action error:", error);
+    if (error.message && error.message.includes("unique")) {
+      return { error: "A sprint with this number already exists." };
+    }
+    return { error: "Failed to create sprint cycle." };
+  }
+}
+
+export async function addProjectToSprintAction(
+  sprintId: string,
+  projectName: string,
+  githubRepo: string
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  if (!projectName || !githubRepo) {
+    return { error: "Project name and Github repo are required." };
+  }
+
+  try {
+    const project = await addProjectToSprintInDb(sprintId, {
+      project_name: projectName,
+      github_repo: githubRepo,
+    });
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Project added to sprint successfully!", project };
+  } catch (error) {
+    console.error("Add project to sprint action error:", error);
+    return { error: "Failed to add project to sprint." };
+  }
+}
+
+export async function addTaskToProjectAction(
+  projectId: string,
+  taskText: string,
+  status: "completed" | "in-progress" | "pending",
+  prLink?: string | null
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  if (!taskText) {
+    return { error: "Task description is required." };
+  }
+
+  try {
+    const task = await addTaskToProjectInDb(projectId, {
+      task_text: taskText,
+      status,
+      pr_link: prLink || null,
+    });
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Task added to project successfully!", task };
+  } catch (error) {
+    console.error("Add task to project action error:", error);
+    return { error: "Failed to add task to project." };
+  }
+}
+
+export async function updateTaskStatusAction(
+  taskId: string,
+  status: "completed" | "carried-forward" | "rejected" | "pending" | "in-progress"
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    await updateTaskStatusInDb(taskId, status);
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Task status updated successfully!" };
+  } catch (error) {
+    console.error("Update task status action error:", error);
+    return { error: "Failed to update task status." };
+  }
+}
+
+export async function deleteSprintAction(sprintId: string) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    await deleteSprintFromDb(sprintId);
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Sprint deleted successfully!" };
+  } catch (error) {
+    console.error("Delete sprint action error:", error);
+    return { error: "Failed to delete sprint." };
   }
 }
