@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function AdminDispatchesPage() {
-  let dispatches = [];
+  let dispatches: any[] = [];
   try {
     dispatches = await getDispatchesFromDb();
   } catch (error) {

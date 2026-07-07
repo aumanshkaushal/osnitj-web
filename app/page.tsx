@@ -259,29 +259,8 @@ function ActivityStream({
   dateStr: string;
 }
 
-interface DbSprintTask {
-  id: string;
-  task_text: string;
-  status: "completed" | "in-progress" | "pending";
-  pr_link?: string | null;
-}
+import type { DbSprint, DbSprintProject, DbSprintTask } from "@/lib/sprints-db";
 
-interface DbSprintProject {
-  id: string;
-  project_name: string;
-  github_repo: string;
-  tasks: DbSprintTask[];
-}
-
-interface DbSprint {
-  id: string;
-  sprint_number: number;
-  start_date: string;
-  end_date: string;
-  status: "retro" | "active" | "upcoming";
-  retro_notes?: string | null;
-  projects: DbSprintProject[];
-}
 
 function getSprintStatus(startDateStr: string, endDateStr: string): "retro" | "active" | "upcoming" {
   const today = new Date();

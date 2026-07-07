@@ -291,7 +291,7 @@ export default function AdminDispatchEditor({ dispatch = null }: AdminDispatchEd
               <input
                 type="number"
                 min={1}
-                value={formData.readTime === "" ? "" : formData.readTime}
+                value={(formData.readTime as any) === "" ? "" : formData.readTime}
                 onChange={(e) => {
                   const val = e.target.value;
                   setIsReadTimeManuallyEdited(true);

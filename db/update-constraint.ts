@@ -12,6 +12,7 @@ async function main() {
   const sql = postgres(connectionString!, {
     ssl: "require",
     max: 1,
+    prepare: false,
   });
 
   try {

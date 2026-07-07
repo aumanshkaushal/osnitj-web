@@ -6,6 +6,7 @@ const sql = connectionString
   ? postgres(connectionString, {
       ssl: "require",
       max: 1,
+      prepare: false,
     })
   : null;
 

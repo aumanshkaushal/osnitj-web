@@ -2,6 +2,8 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import fs from "fs/promises";
+import path from "path";
 import { getAdminByUsername } from "@/lib/admin-db";
 import { verifyPassword, signToken, verifyToken } from "@/lib/auth";
 import { createDispatchInDb, updateDispatchInDb, deleteDispatchFromDb } from "@/lib/dispatch-db";
@@ -10,7 +12,9 @@ import {
   addProjectToSprintInDb,
   addTaskToProjectInDb,
   updateTaskStatusInDb,
-  deleteSprintFromDb
+  deleteSprintFromDb,
+  deleteTaskFromDb,
+  deleteProjectFromSprintInDb
 } from "@/lib/sprints-db";
 
 const SESSION_COOKIE_NAME = "admin_session";
@@ -195,6 +199,49 @@ export async function addProjectToSprintAction(
   }
 
   try {
+    let repoExists = false;
+    let isOfflineFallback = false;
+    try {
+      const headers: Record<string, string> = {
+        Accept: "application/vnd.github+json",
+      };
+      if (process.env.GITHUB_TOKEN) {
+        headers["Authorization"] = `token ${process.env.GITHUB_TOKEN}`;
+      }
+      
+      const githubRes = await fetch(`https://api.github.com/repos/Opensource-NITJ/${githubRepo}`, { headers });
+      if (githubRes.status === 200) {
+        repoExists = true;
+      } else if (githubRes.status === 404) {
+        repoExists = false;
+      } else {
+        throw new Error(`GitHub responded with status: ${githubRes.status}`);
+      }
+    } catch (err) {
+      isOfflineFallback = true;
+      try {
+        const cachePath = path.join(process.cwd(), ".next", "github-cache.json");
+        const cacheContent = await fs.readFile(cachePath, "utf8");
+        const cache = JSON.parse(cacheContent);
+        if (cache && Array.isArray(cache.projects)) {
+          repoExists = cache.projects.some(
+            (p: any) => p.name.toLowerCase() === githubRepo.toLowerCase()
+          );
+        }
+      } catch (cacheErr) {
+        console.error("Verification fallback cache error:", cacheErr);
+        repoExists = true;
+      }
+    }
+
+    if (!repoExists) {
+      if (isOfflineFallback) {
+        return { error: `GitHub API rate-limited, and 'Opensource-NITJ/${githubRepo}' was not found in the local cache.` };
+      } else {
+        return { error: `Repository 'Opensource-NITJ/${githubRepo}' was not found on GitHub.` };
+      }
+    }
+
     const project = await addProjectToSprintInDb(sprintId, {
       project_name: projectName,
       github_repo: githubRepo,
@@ -272,5 +319,39 @@ export async function deleteSprintAction(sprintId: string) {
   } catch (error) {
     console.error("Delete sprint action error:", error);
     return { error: "Failed to delete sprint." };
+  }
+}
+
+export async function deleteTaskAction(taskId: string) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    await deleteTaskFromDb(taskId);
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Task deleted successfully!" };
+  } catch (error) {
+    console.error("Delete task action error:", error);
+    return { error: "Failed to delete task." };
+  }
+}
+
+export async function deleteProjectAction(projectId: string) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    await deleteProjectFromSprintInDb(projectId);
+    revalidatePath("/");
+    revalidatePath("/admin/sprints");
+    return { success: true, message: "Project deleted successfully!" };
+  } catch (error) {
+    console.error("Delete project action error:", error);
+    return { error: "Failed to delete project." };
   }
 }

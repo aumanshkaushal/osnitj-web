@@ -10,7 +10,7 @@ export default async function AdminSprintsPage() {
   }
 
   // Fetch initial sprints data from database
-  let initialSprints = [];
+  let initialSprints: any[] = [];
   try {
     initialSprints = await getSprintsFromDb();
   } catch (error) {

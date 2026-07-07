@@ -6,6 +6,7 @@ const sql = connectionString
   ? postgres(connectionString, {
       ssl: "require",
       max: 1,
+      prepare: false,
     })
   : null;
 
@@ -176,14 +177,61 @@ export async function updateTaskStatusInDb(
   }
 
   await sql.begin(async (tx) => {
-    // 1. Update the task status
+    const [currentTask] = await tx`
+      select status, task_text, project_id from public.sprint_tasks
+      where id = ${taskId}
+    `;
+
     await tx`
       update public.sprint_tasks
       set status = ${status}, updated_at = now()
       where id = ${taskId}
     `;
 
-    // 2. If carried forward, copy to the next sprint cycle
+    if (currentTask && currentTask.status === "carried-forward" && status !== "carried-forward") {
+      const [projectDetails] = await tx`
+        select p.project_name, p.github_repo, s.sprint_number
+        from public.sprint_projects p
+        join public.sprints s on p.sprint_id = s.id
+        where p.id = ${currentTask.project_id}
+      `;
+
+      if (projectDetails) {
+        let nextSprintNum = Number(projectDetails.sprint_number) + 1;
+        const taskText = currentTask.task_text;
+        const projectName = projectDetails.project_name;
+
+        while (true) {
+          const [nextSprint] = await tx`
+            select id from public.sprints where sprint_number = ${nextSprintNum}
+          `;
+          if (!nextSprint) break;
+
+          const [nextTask] = await tx`
+            select t.id, t.status from public.sprint_tasks t
+            join public.sprint_projects p on t.project_id = p.id
+            where p.sprint_id = ${nextSprint.id} 
+              and p.project_name = ${projectName}
+              and t.task_text = ${taskText}
+          `;
+
+          if (!nextTask) break;
+
+          const wasNextCarried = nextTask.status === "carried-forward";
+
+          await tx`
+            delete from public.sprint_tasks where id = ${nextTask.id}
+          `;
+
+          if (!wasNextCarried) {
+            break;
+          }
+
+          nextSprintNum++;
+        }
+      }
+    }
+
     if (status === "carried-forward") {
       const [taskDetails] = await tx`
         select t.task_text, p.project_name, p.github_repo, s.sprint_number
@@ -196,13 +244,11 @@ export async function updateTaskStatusInDb(
       if (taskDetails) {
         const nextSprintNumber = Number(taskDetails.sprint_number) + 1;
         
-        // Find next sprint
         const [nextSprint] = await tx`
           select id from public.sprints where sprint_number = ${nextSprintNumber}
         `;
 
         if (nextSprint) {
-          // Find or create project
           let [nextProject] = await tx`
             select id from public.sprint_projects
             where sprint_id = ${nextSprint.id} and project_name = ${taskDetails.project_name}
@@ -216,7 +262,6 @@ export async function updateTaskStatusInDb(
             `;
           }
 
-          // Check if already carried forward to prevent duplicates
           const [existingTask] = await tx`
             select id from public.sprint_tasks
             where project_id = ${nextProject.id} and task_text = ${taskDetails.task_text}
@@ -259,4 +304,26 @@ export async function deleteSprintFromDb(sprintId: string): Promise<void> {
       where sprint_number > ${sprint.sprint_number}
     `;
   });
+}
+
+export async function deleteTaskFromDb(taskId: string): Promise<void> {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await sql`
+    delete from public.sprint_tasks
+    where id = ${taskId}
+  `;
+}
+
+export async function deleteProjectFromSprintInDb(projectId: string): Promise<void> {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await sql`
+    delete from public.sprint_projects
+    where id = ${projectId}
+  `;
 }

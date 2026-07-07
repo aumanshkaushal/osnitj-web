@@ -18,6 +18,7 @@ const sql = connectionString
   ? postgres(connectionString, {
       ssl: "require",
       max: 1,
+      prepare: false,
     })
   : null;
 
@@ -136,13 +137,13 @@ export async function updateDispatchInDb(
   await sql`
     update dispatches
     set
-      slug = ${dispatch.slug},
-      title = ${dispatch.title},
-      author_name = ${dispatch.author?.name},
-      author_github = ${dispatch.author?.github},
-      date = ${dispatch.date},
-      read_time = ${dispatch.readTime},
-      markdown_content = ${dispatch.markdownContent},
+      slug = ${dispatch.slug ?? null},
+      title = ${dispatch.title ?? null},
+      author_name = ${dispatch.author?.name ?? null},
+      author_github = ${dispatch.author?.github ?? null},
+      date = ${dispatch.date ?? null},
+      read_time = ${dispatch.readTime ?? null},
+      markdown_content = ${dispatch.markdownContent ?? null},
       updated_at = now()
     where id = ${id}
   `;

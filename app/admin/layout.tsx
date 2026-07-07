@@ -51,7 +51,7 @@ export default async function AdminLayout({
             Visit Dispatches
             <ExternalLink className="size-3" />
           </Link>
-          <form action={logoutAction} className="inline">
+          <form action={logoutAction as any} className="inline">
             <button
               type="submit"
               className="text-xs uppercase tracking-wider flex items-center gap-1.5 px-3 py-1.5 bg-black text-[#F7F7F2] dark:bg-[#F4F4F0] dark:text-[#121212] hover:opacity-90 transition-opacity cursor-pointer border border-transparent"

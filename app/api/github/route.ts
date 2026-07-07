@@ -164,17 +164,33 @@ async function readCacheFromFile() {
   }
 }
 
-// In-memory cache variable
 let cachedData: {
+  timestamp?: number;
   projects: Project[];
   contributors: Contributor[];
   commits: RecentCommit[];
 } | null = null;
 
-export async function GET() {
-  // If in-memory cache is empty, attempt to read from disk
+const CACHE_DURATION = 15 * 60 * 1000;
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const forceRefresh = searchParams.get("refresh") === "true";
+
   if (!cachedData) {
     cachedData = await readCacheFromFile();
+  }
+
+  const now = Date.now();
+  const isFresh = cachedData && cachedData.timestamp && (now - cachedData.timestamp < CACHE_DURATION);
+
+  if (isFresh && !forceRefresh) {
+    return NextResponse.json(cachedData, {
+      headers: {
+        "Cache-Control": "public, max-age=900, must-revalidate",
+        "X-Cache-Status": "HIT_FRESH",
+      },
+    });
   }
 
   try {
@@ -256,14 +272,19 @@ export async function GET() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 12);
 
-    cachedData = { projects, contributors, commits };
+    cachedData = {
+      timestamp: Date.now(),
+      projects,
+      contributors,
+      commits,
+    };
     
-    // Save to disk asynchronously so we don't block the API response
     writeCacheToFile(cachedData);
 
     return NextResponse.json(cachedData, {
       headers: {
         "Cache-Control": "no-store, max-age=0, must-revalidate",
+        "X-Cache-Status": "MISS",
       },
     });
   } catch (error: any) {
