@@ -504,7 +504,7 @@ export default function FaqManagerClient({ initialTags, initialQuestions }: Prop
                     <h3 className="font-serif text-xl font-medium text-zinc-900 dark:text-zinc-100 mb-3">
                       {q.question}
                     </h3>
-                    <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content font-serif">
+                    <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content font-serif break-words">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
@@ -533,8 +533,8 @@ export default function FaqManagerClient({ initialTags, initialQuestions }: Prop
                             <a
                               href={href}
                               target="_blank"
-                              rel="noreferrer"
-                              className="text-[#C85A41] underline"
+                              rel="noreferrer; noopener"
+                              className="text-[#C85A41] underline break-words"
                             >
                               {children}
                             </a>
@@ -1075,7 +1075,7 @@ export default function FaqManagerClient({ initialTags, initialQuestions }: Prop
                     {questionText || "Question Title Preview"}
                   </h3>
                   
-                  <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content font-serif">
+                  <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content font-serif break-words">
                     {questionAnswer.trim() === "" ? (
                       <p className="text-zinc-400 italic text-sm font-sans">
                         Begin writing in the editor to see the live rendering...
@@ -1141,7 +1141,7 @@ export default function FaqManagerClient({ initialTags, initialQuestions }: Prop
                               href={href}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41]"
+                              className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41] break-words"
                             >
                               {children}
                             </a>

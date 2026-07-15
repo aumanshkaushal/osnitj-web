@@ -299,7 +299,7 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                 >
                   {activeQuestion.question}
                 </h2>
-                <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content selection:bg-[#C85A41]/20">
+                <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content selection:bg-[#C85A41]/20 break-words">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
@@ -363,7 +363,7 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                           href={href}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41]"
+                          className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41] break-words"
                         >
                           {children}
                         </a>
