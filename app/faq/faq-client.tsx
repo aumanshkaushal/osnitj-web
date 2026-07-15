@@ -27,7 +27,7 @@ import {
   MapPin,
   Phone,
   Shield,
-  Clock
+  Clock,
 } from "lucide-react";
 import ThemeToggle from "@/components/theme-toggle";
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -73,21 +73,31 @@ type Props = {
   initialQuestions: FaqQuestion[];
   initialSelectedSlug?: string;
 };
-export default function FaqClient({ initialTags, initialQuestions, initialSelectedSlug }: Props) {
+export default function FaqClient({
+  initialTags,
+  initialQuestions,
+  initialSelectedSlug,
+}: Props) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const initialSelectedId = useMemo(() => {
     if (initialSelectedSlug && initialQuestions) {
-      const found = initialQuestions.find((q) => q && q.slug === initialSelectedSlug);
+      const found = initialQuestions.find(
+        (q) => q && q.slug === initialSelectedSlug,
+      );
       if (found) return found.id;
     }
     return null;
   }, [initialSelectedSlug, initialQuestions]);
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(initialSelectedId);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
+    initialSelectedId,
+  );
   useEffect(() => {
     if (initialSelectedSlug && initialQuestions) {
-      const found = initialQuestions.find((q) => q && q.slug === initialSelectedSlug);
+      const found = initialQuestions.find(
+        (q) => q && q.slug === initialSelectedSlug,
+      );
       if (found) {
         setSelectedQuestionId(found.id);
       }
@@ -97,10 +107,15 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
     if (!initialQuestions) return [];
     return initialQuestions.filter((item) => {
       if (!item) return false;
-      const matchesCategory = selectedCategory === "all" || item.tag_slug === selectedCategory;
+      const matchesCategory =
+        selectedCategory === "all" || item.tag_slug === selectedCategory;
       const matchesSearch =
-        (item.question || "").toLowerCase().includes((searchQuery || "").toLowerCase()) ||
-        (item.answer || "").toLowerCase().includes((searchQuery || "").toLowerCase());
+        (item.question || "")
+          .toLowerCase()
+          .includes((searchQuery || "").toLowerCase()) ||
+        (item.answer || "")
+          .toLowerCase()
+          .includes((searchQuery || "").toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [searchQuery, selectedCategory, initialQuestions]);
@@ -118,7 +133,9 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
       if (!exists && filteredQuestions.length > 0) {
         if (window.innerWidth >= 1024) {
           setSelectedQuestionId(filteredQuestions[0].id);
-          router.replace(`/faq/${filteredQuestions[0].slug}`, { scroll: false });
+          router.replace(`/faq/${filteredQuestions[0].slug}`, {
+            scroll: false,
+          });
         } else {
           setSelectedQuestionId(null);
           router.replace("/faq", { scroll: false });
@@ -146,7 +163,9 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
   }, [activeQuestion, initialTags]);
   return (
     <main className="min-h-screen lg:h-screen w-full overflow-y-auto lg:overflow-hidden faq-custom-scrollbar bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] selection:bg-[#111] selection:text-[#F7F7F2] dark:selection:bg-[#F4F4F0] dark:selection:text-[#121212] transition-colors flex flex-col">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .faq-custom-scrollbar::-webkit-scrollbar {
           width: 5px;
           height: 5px;
@@ -165,7 +184,9 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
           scrollbar-width: thin;
           scrollbar-color: rgba(200, 90, 65, 0.25) transparent;
         }
-      `}} />
+      `,
+        }}
+      />
       <header className="flex items-center justify-between border-b border-black/15 dark:border-white/15 font-mono text-[11px] uppercase tracking-[0.22em] shrink-0 h-14 px-4 md:px-8 lg:px-10">
         <Link
           href="/"
@@ -198,7 +219,10 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
               </h1>
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-zinc-400 dark:text-zinc-500"
+                strokeWidth={1.5}
+              />
               <input
                 type="text"
                 placeholder="Search queries..."
@@ -283,7 +307,7 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                   className="lg:hidden flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500 hover:text-[#C85A41] mb-8 cursor-pointer"
                 >
                   <ArrowLeft className="size-3.5" />
-                  ← Back to List
+                  Back to List
                 </button>
                 <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[#C85A41] mb-4">
                   {activeTag && (
@@ -335,17 +359,22 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                         </blockquote>
                       ),
                       p: ({ children }) => {
-                        const childArray = Array.isArray(children) ? children : [children];
-                        const hasBlockContent = childArray.some((child: any) => {
-                          if (!child || typeof child === "string") return false;
-                          return (
-                            child?.type === "img" ||
-                            child?.props?.node?.tagName === "img" ||
-                            child?.props?.node?.tagName === "pre" ||
-                            child?.props?.node?.tagName === "blockquote" ||
-                            child?.props?.node?.tagName === "table"
-                          );
-                        });
+                        const childArray = Array.isArray(children)
+                          ? children
+                          : [children];
+                        const hasBlockContent = childArray.some(
+                          (child: any) => {
+                            if (!child || typeof child === "string")
+                              return false;
+                            return (
+                              child?.type === "img" ||
+                              child?.props?.node?.tagName === "img" ||
+                              child?.props?.node?.tagName === "pre" ||
+                              child?.props?.node?.tagName === "blockquote" ||
+                              child?.props?.node?.tagName === "table"
+                            );
+                          },
+                        );
                         if (hasBlockContent) {
                           return <>{children}</>;
                         }
@@ -431,17 +460,13 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                       code: ({ inline, children }: any) => {
                         if (inline) {
                           return (
-                            <code
-                              className="bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded px-1.5 py-0.5 text-[14px] text-[#C85A41] font-mono"
-                            >
+                            <code className="bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded px-1.5 py-0.5 text-[14px] text-[#C85A41] font-mono">
                               {children}
                             </code>
                           );
                         }
                         return (
-                          <code
-                            className="text-[13px] leading-6 text-[#111] dark:text-[#EDE7DD] font-mono"
-                          >
+                          <code className="text-[13px] leading-6 text-[#111] dark:text-[#EDE7DD] font-mono">
                             {children}
                           </code>
                         );
@@ -488,7 +513,8 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                 Survival Handbook Archives
               </h2>
               <p className="max-w-xs text-xs uppercase tracking-wider leading-relaxed text-zinc-500">
-                Select a query from the index on the left to read full answers and campus references.
+                Select a query from the index on the left to read full answers
+                and campus references.
               </p>
             </div>
           )}
