@@ -1,4 +1,5 @@
 import { getCachedFaqData } from "@/lib/faq-db";
+import { redirect } from "next/navigation";
 import FaqClient from "../faq-client";
 
 export const revalidate = 60;
@@ -23,6 +24,11 @@ export default async function FAQQuestionPage({ params }: PageProps) {
   const { slug } = await params;
   const { tags, questions } = await getCachedFaqData();
 
+  const questionExists = questions.some((q) => q && q.slug === slug);
+  if (!questionExists) {
+    redirect("/faq");
+  }
+
   return (
     <FaqClient
       initialTags={tags}
@@ -31,3 +37,4 @@ export default async function FAQQuestionPage({ params }: PageProps) {
     />
   );
 }
+

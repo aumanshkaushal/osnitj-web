@@ -222,3 +222,14 @@ export async function getCachedFaqData(): Promise<{ tags: FaqTag[]; questions: F
 
   return { tags, questions };
 }
+
+export function clearFaqCache(): void {
+  try {
+    if (fs.existsSync(CACHE_PATH)) {
+      fs.unlinkSync(CACHE_PATH);
+    }
+  } catch (e) {
+    console.warn("Failed to clear FAQ cache:", e);
+  }
+}
+
