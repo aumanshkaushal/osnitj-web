@@ -17,6 +17,13 @@ export default function AdminHubPage() {
       href: "/admin/sprints",
       status: "active",
     },
+    {
+      title: "FAQ Manager",
+      description: "Manage categories, icons, questions, and answers for the college fresher FAQ guide.",
+      icon: HelpCircle,
+      href: "/admin/faq",
+      status: "active",
+    },
   ];
 
   return (

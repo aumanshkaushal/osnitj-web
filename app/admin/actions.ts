@@ -16,6 +16,14 @@ import {
   deleteTaskFromDb,
   deleteProjectFromSprintInDb
 } from "@/lib/sprints-db";
+import {
+  createFaqTagInDb,
+  updateFaqTagInDb,
+  deleteFaqTagFromDb,
+  createFaqQuestionInDb,
+  updateFaqQuestionInDb,
+  deleteFaqQuestionFromDb
+} from "@/lib/faq-db";
 
 const SESSION_COOKIE_NAME = "admin_session";
 
@@ -355,3 +363,139 @@ export async function deleteProjectAction(projectId: string) {
     return { error: "Failed to delete project." };
   }
 }
+
+export async function saveFaqTagAction(
+  data: {
+    slug: string;
+    label: string;
+    icon: string;
+    isNew: boolean;
+  }
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  const { slug, label, icon, isNew } = data;
+
+  if (!slug || !label || !icon) {
+    return { error: "Slug, Label, and Icon are required." };
+  }
+
+  const slugRegex = /^[a-z0-9-_]+$/;
+  if (!slugRegex.test(slug)) {
+    return { error: "Slug can only contain lowercase letters, numbers, hyphens, and underscores." };
+  }
+
+  try {
+    if (isNew) {
+      await createFaqTagInDb({ slug, label, icon });
+    } else {
+      await updateFaqTagInDb(slug, { label, icon });
+    }
+    revalidatePath("/faq");
+    revalidatePath("/admin/faq");
+    return { success: true, message: `FAQ tag ${isNew ? "created" : "updated"} successfully!` };
+  } catch (error: any) {
+    console.error("Save FAQ tag action error:", error);
+    if (error.message && error.message.includes("unique")) {
+      return { error: "An FAQ category with this slug already exists." };
+    }
+    return { error: "Failed to save FAQ category. Please check database configuration." };
+  }
+}
+
+export async function deleteFaqTagAction(slug: string) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    await deleteFaqTagFromDb(slug);
+    revalidatePath("/faq");
+    revalidatePath("/admin/faq");
+    return { success: true, message: "FAQ category and its questions deleted successfully!" };
+  } catch (error) {
+    console.error("Delete FAQ tag action error:", error);
+    return { error: "Failed to delete FAQ category." };
+  }
+}
+
+export async function saveFaqQuestionAction(
+  data: {
+    id?: string;
+    slug: string;
+    tag_slug: string;
+    question: string;
+    answer: string;
+    order_index: number;
+  }
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  const { id, slug, tag_slug, question, answer, order_index } = data;
+
+  if (!slug || !tag_slug || !question || !answer) {
+    return { error: "Slug, Category, Question, and Answer are required." };
+  }
+
+  const slugRegex = /^[a-z0-9-_]+$/;
+  if (!slugRegex.test(slug)) {
+    return { error: "Slug can only contain lowercase letters, numbers, hyphens, and underscores." };
+  }
+
+  try {
+    if (id) {
+      await updateFaqQuestionInDb(id, {
+        slug,
+        tag_slug,
+        question,
+        answer,
+        order_index: Number(order_index) || 0,
+      });
+      revalidatePath("/faq");
+      revalidatePath("/admin/faq");
+      return { success: true, message: "FAQ updated successfully!" };
+    } else {
+      await createFaqQuestionInDb({
+        slug,
+        tag_slug,
+        question,
+        answer,
+        order_index: Number(order_index) || 0,
+      });
+      revalidatePath("/faq");
+      revalidatePath("/admin/faq");
+      return { success: true, message: "FAQ created successfully!" };
+    }
+  } catch (error: any) {
+    console.error("Save FAQ question action error:", error);
+    if (error.message && error.message.includes("unique")) {
+      return { error: "An FAQ question with this slug already exists." };
+    }
+    return { error: "Failed to save FAQ." };
+  }
+}
+
+export async function deleteFaqQuestionAction(id: string) {
+  const session = await getAdminSession();
+  if (!session) {
+    return { error: "Unauthorized. Please log in." };
+  }
+
+  try {
+    await deleteFaqQuestionFromDb(id);
+    revalidatePath("/faq");
+    revalidatePath("/admin/faq");
+    return { success: true, message: "FAQ deleted successfully!" };
+  } catch (error) {
+    console.error("Delete FAQ question action error:", error);
+    return { error: "Failed to delete FAQ." };
+  }
+}
+

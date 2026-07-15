@@ -1,7 +1,6 @@
 import postgres from "postgres";
 import { hashPassword } from "../lib/auth";
 
-
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -14,11 +13,11 @@ async function main() {
   const sql = postgres(connectionString!, {
     ssl: "require",
     max: 1,
+    prepare: false,
   });
 
   try {
-    // 1. Create the admin_users table if it doesn't exist
-    console.log("Creating admin_users table (if it doesn't exist)...");
+    console.log("Creating admin_users table if it doesn't exist...");
     await sql`
       create table if not exists public.admin_users (
         id uuid primary key default gen_random_uuid(),
@@ -27,34 +26,29 @@ async function main() {
         created_at timestamptz not null default now()
       );
     `;
-    console.log("admin_users table is ready.");
 
-    // 2. Check if an admin already exists
-    const existingAdmins = await sql`
-      select id, username from public.admin_users limit 1;
+    const username =
+      process.argv[2] ||
+      process.env.ADMIN_USERNAME ||
+      "opensourcenitj@gmail.com";
+    const password =
+      process.argv[3] || process.env.ADMIN_PASSWORD || "YOUR_NEW_PASSWORD";
+    const hashedPassword = hashPassword(password);
+
+    console.log(`Seeding admin user: "${username}"...`);
+    await sql`
+      insert into public.admin_users (username, password_hash)
+      values (${username}, ${hashedPassword})
+      on conflict (username) do update
+      set password_hash = excluded.password_hash;
     `;
 
-    if (existingAdmins.length > 0) {
-      console.log(`Database already has admin user(s). First admin: "${existingAdmins[0].username}"`);
-      console.log("Skipping default admin seeding to prevent overwrites.");
-    } else {
-      // 3. Seed with a default admin user
-      const defaultUsername = "admin";
-      const defaultPassword = "admin_nitj_2026";
-      const hashedPassword = hashPassword(defaultPassword);
-
-      console.log(`Seeding default admin user: "${defaultUsername}"...`);
-      await sql`
-        insert into public.admin_users (username, password_hash)
-        values (${defaultUsername}, ${hashedPassword});
-      `;
-      console.log("\n==================================================");
-      console.log("Admin user seeded successfully!");
-      console.log("Credentials:");
-      console.log(`  Username: ${defaultUsername}`);
-      console.log(`  Password: ${defaultPassword}`);
-      console.log("==================================================\n");
-    }
+    console.log("\n==================================================");
+    console.log("Admin user seeded successfully!");
+    console.log("Credentials:");
+    console.log(`  Username: ${username}`);
+    console.log(`  Password: ${password}`);
+    console.log("==================================================\n");
   } catch (error) {
     console.error("Error during database operations:", error);
   } finally {
