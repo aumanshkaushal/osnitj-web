@@ -22,7 +22,8 @@ import {
   deleteFaqTagFromDb,
   createFaqQuestionInDb,
   updateFaqQuestionInDb,
-  deleteFaqQuestionFromDb
+  deleteFaqQuestionFromDb,
+  clearFaqCache
 } from "@/lib/faq-db";
 
 const SESSION_COOKIE_NAME = "admin_session";
@@ -394,7 +395,8 @@ export async function saveFaqTagAction(
     } else {
       await updateFaqTagInDb(slug, { label, icon });
     }
-    revalidatePath("/faq");
+    clearFaqCache();
+    revalidatePath("/faq", "layout");
     revalidatePath("/admin/faq");
     return { success: true, message: `FAQ tag ${isNew ? "created" : "updated"} successfully!` };
   } catch (error: any) {
@@ -414,7 +416,8 @@ export async function deleteFaqTagAction(slug: string) {
 
   try {
     await deleteFaqTagFromDb(slug);
-    revalidatePath("/faq");
+    clearFaqCache();
+    revalidatePath("/faq", "layout");
     revalidatePath("/admin/faq");
     return { success: true, message: "FAQ category and its questions deleted successfully!" };
   } catch (error) {
@@ -458,7 +461,8 @@ export async function saveFaqQuestionAction(
         answer,
         order_index: Number(order_index) || 0,
       });
-      revalidatePath("/faq");
+      clearFaqCache();
+      revalidatePath("/faq", "layout");
       revalidatePath("/admin/faq");
       return { success: true, message: "FAQ updated successfully!" };
     } else {
@@ -469,7 +473,8 @@ export async function saveFaqQuestionAction(
         answer,
         order_index: Number(order_index) || 0,
       });
-      revalidatePath("/faq");
+      clearFaqCache();
+      revalidatePath("/faq", "layout");
       revalidatePath("/admin/faq");
       return { success: true, message: "FAQ created successfully!" };
     }
@@ -490,7 +495,8 @@ export async function deleteFaqQuestionAction(id: string) {
 
   try {
     await deleteFaqQuestionFromDb(id);
-    revalidatePath("/faq");
+    clearFaqCache();
+    revalidatePath("/faq", "layout");
     revalidatePath("/admin/faq");
     return { success: true, message: "FAQ deleted successfully!" };
   } catch (error) {

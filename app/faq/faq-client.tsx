@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import {
   ArrowUpRight,
   ArrowLeft,
@@ -301,7 +302,38 @@ export default function FaqClient({ initialTags, initialQuestions, initialSelect
                 <div className="prose dark:prose-invert max-w-none text-left faq-markdown-content selection:bg-[#C85A41]/20">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
                     components={{
+                      h1: ({ children }) => (
+                        <h1 className="text-2xl md:text-3xl font-serif font-semibold text-[#111] dark:text-[#F4F4F0] mt-8 mb-4 border-b border-black/10 dark:border-white/10 pb-2">
+                          {children}
+                        </h1>
+                      ),
+                      h2: ({ children }) => (
+                        <h2 className="text-xl md:text-2xl font-serif font-semibold text-[#111] dark:text-[#F4F4F0] mt-8 mb-4 border-b border-black/10 dark:border-white/10 pb-2">
+                          {children}
+                        </h2>
+                      ),
+                      h3: ({ children }) => (
+                        <h3 className="text-lg md:text-xl font-serif font-semibold text-[#C85A41] mt-6 mb-3">
+                          {children}
+                        </h3>
+                      ),
+                      h4: ({ children }) => (
+                        <h4 className="text-base md:text-lg font-serif font-semibold text-[#111] dark:text-[#F4F4F0] mt-4 mb-2">
+                          {children}
+                        </h4>
+                      ),
+                      u: ({ children }) => (
+                        <span className="underline decoration-[#C85A41]/50 underline-offset-4">
+                          {children}
+                        </span>
+                      ),
+                      blockquote: ({ children }) => (
+                        <blockquote className="my-6 pl-4 border-l-4 border-[#C85A41] bg-black/[0.02] dark:bg-white/[0.02] py-2 pr-2 italic text-zinc-600 dark:text-zinc-400">
+                          {children}
+                        </blockquote>
+                      ),
                       p: ({ children }) => {
                         const childArray = Array.isArray(children) ? children : [children];
                         const hasBlockContent = childArray.some((child: any) => {
