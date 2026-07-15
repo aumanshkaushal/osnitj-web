@@ -206,7 +206,7 @@ export default function DispatchPage() {
             </div>
 
             {/* Content */}
-            <div className="mt-14">
+            <div className="mt-14 break-words">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -274,7 +274,7 @@ export default function DispatchPage() {
                       href={href}
                       target={href?.startsWith("http") ? "_blank" : undefined}
                       rel={href?.startsWith("http") ? "noreferrer" : undefined}
-                      className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41]"
+                      className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41] break-words"
                     >
                       {children}
                     </a>

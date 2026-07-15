@@ -354,7 +354,7 @@ export default function AdminDispatchEditor({ dispatch = null }: AdminDispatchEd
 
             {/* Rendered Markdown Content */}
             <div
-              className="prose dark:prose-invert max-w-none text-left"
+              className="prose dark:prose-invert max-w-none text-left break-words"
               style={{ fontFamily: "var(--font-inter)" }}
             >
               {formData.markdownContent.trim() === "" ? (
@@ -412,7 +412,7 @@ export default function AdminDispatchEditor({ dispatch = null }: AdminDispatchEd
                         href={href}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41]"
+                        className="text-[#C85A41] underline underline-offset-4 decoration-[#C85A41]/30 hover:decoration-[#C85A41] break-words"
                       >
                         {children}
                       </a>
