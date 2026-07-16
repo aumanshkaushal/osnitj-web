@@ -85,17 +85,23 @@ export default function FaqClient({
   const detailContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   
-  const initialCategory = useMemo(() => {
-    if (initialSelectedSlug && initialQuestions) {
-      const found = initialQuestions.find(
-        (q) => q && q.slug === initialSelectedSlug,
-      );
-      if (found) return found.tag_slug;
-    }
-    return "all";
-  }, [initialSelectedSlug, initialQuestions]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const selectCategory = (category: string) => {
+    setSelectedCategory(category);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("faq_selected_category", category);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("faq_selected_category");
+      if (saved) {
+        setSelectedCategory(saved);
+      }
+    }
+  }, []);
 
   const initialSelectedId = useMemo(() => {
     if (initialSelectedSlug && initialQuestions) {
@@ -185,15 +191,15 @@ export default function FaqClient({
       const slug = pathParts[pathParts.length - 1];
       if (window.location.pathname === "/faq" || !slug) {
         setSelectedQuestionId(null);
-        setSelectedCategory("all");
+        selectCategory("all");
       } else {
         const found = initialQuestions.find((q) => q && q.slug === slug);
         if (found) {
           setSelectedQuestionId(found.id);
-          setSelectedCategory(found.tag_slug);
+          selectCategory(found.tag_slug);
         } else {
           setSelectedQuestionId(null);
-          setSelectedCategory("all");
+          selectCategory("all");
         }
       }
     };
@@ -311,7 +317,7 @@ export default function FaqClient({
             </div>
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 faq-custom-scrollbar font-mono text-[10px] uppercase tracking-wider">
               <button
-                onClick={() => setSelectedCategory("all")}
+                onClick={() => selectCategory("all")}
                 className={`px-3 py-1.5 border transition-all cursor-pointer whitespace-nowrap ${
                   selectedCategory === "all"
                     ? "bg-[#111] text-[#F7F7F2] border-[#111] dark:bg-[#F4F4F0] dark:text-[#121212] dark:border-[#F4F4F0]"
@@ -323,7 +329,7 @@ export default function FaqClient({
               {initialTags.map((tag) => (
                 <button
                   key={tag.slug}
-                  onClick={() => setSelectedCategory(tag.slug)}
+                  onClick={() => selectCategory(tag.slug)}
                   className={`px-3 py-1.5 border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                     selectedCategory === tag.slug
                       ? "bg-[#111] text-[#F7F7F2] border-[#111] dark:bg-[#F4F4F0] dark:text-[#121212] dark:border-[#F4F4F0]"
