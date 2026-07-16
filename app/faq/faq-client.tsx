@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -79,6 +79,8 @@ export default function FaqClient({
   initialSelectedSlug,
 }: Props) {
   const router = useRouter();
+  const mainRef = useRef<HTMLElement>(null);
+  const detailContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const initialSelectedId = useMemo(() => {
@@ -146,6 +148,19 @@ export default function FaqClient({
       }
     }
   }, [filteredQuestions, selectedQuestionId, router]);
+
+  useEffect(() => {
+    if (selectedQuestionId) {
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+      }
+      if (detailContainerRef.current) {
+        detailContainerRef.current.scrollTop = 0;
+      }
+      window.scrollTo({ top: 0 });
+    }
+  }, [selectedQuestionId]);
+
   const handleSelectQuestion = (q: FaqQuestion) => {
     setSelectedQuestionId(q.id);
     router.push(`/faq/${q.slug}`, { scroll: false });
@@ -162,7 +177,10 @@ export default function FaqClient({
     return initialTags.find((t) => t.slug === activeQuestion.tag_slug) || null;
   }, [activeQuestion, initialTags]);
   return (
-    <main className="min-h-screen lg:h-screen w-full overflow-y-auto lg:overflow-hidden faq-custom-scrollbar bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] selection:bg-[#111] selection:text-[#F7F7F2] dark:selection:bg-[#F4F4F0] dark:selection:text-[#121212] transition-colors flex flex-col">
+    <main
+      ref={mainRef}
+      className="min-h-screen lg:h-screen w-full overflow-y-auto lg:overflow-hidden faq-custom-scrollbar bg-[#F7F7F2] dark:bg-[#121212] text-[#111] dark:text-[#F4F4F0] selection:bg-[#111] selection:text-[#F7F7F2] dark:selection:bg-[#F4F4F0] dark:selection:text-[#121212] transition-colors flex flex-col"
+    >
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -295,6 +313,7 @@ export default function FaqClient({
           </div>
         </div>
         <div
+          ref={detailContainerRef}
           className={`flex-1 bg-white dark:bg-[#121212] flex flex-col transition-all duration-300 lg:h-full lg:overflow-y-auto faq-custom-scrollbar ${
             !selectedQuestionId ? "hidden lg:flex" : "flex"
           }`}
