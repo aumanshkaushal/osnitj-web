@@ -107,7 +107,7 @@ export async function getTrafficData(period: string): Promise<Array<{
     // Group by hour for the last 24h
     const rows = await sql`
       select 
-        to_char(timezone('IST', timestamp), 'HH24:00') as label,
+        to_char(timezone('Asia/Kolkata', timestamp), 'HH24:00') as label,
         count(case when event_name = 'page_view' then 1 end)::int as pageviews,
         count(distinct session_id)::int as visitors
       from public.analytics_events
@@ -124,7 +124,7 @@ export async function getTrafficData(period: string): Promise<Array<{
     // Group by day for other periods
     const rows = await sql`
       select 
-        to_char(timezone('IST', timestamp), 'YYYY-MM-DD') as label,
+        to_char(timezone('Asia/Kolkata', timestamp), 'YYYY-MM-DD') as label,
         count(case when event_name = 'page_view' then 1 end)::int as pageviews,
         count(distinct session_id)::int as visitors
       from public.analytics_events
@@ -405,12 +405,12 @@ export async function getCombinedAnalytics(period: string) {
         : sql`1=1`;
 
   const timeLabelSelect = period === "24h"
-    ? sql`to_char(timezone('IST', timestamp), 'HH24:00')`
-    : sql`to_char(timezone('IST', timestamp), 'YYYY-MM-DD')`;
+    ? sql`to_char(timezone('Asia/Kolkata', timestamp), 'HH24:00')`
+    : sql`to_char(timezone('Asia/Kolkata', timestamp), 'YYYY-MM-DD')`;
 
   const timeLabelOrder = period === "24h"
     ? sql`min(timestamp) asc`
-    : sql`to_char(timezone('IST', timestamp), 'YYYY-MM-DD') asc`;
+    : sql`to_char(timezone('Asia/Kolkata', timestamp), 'YYYY-MM-DD') asc`;
 
   const [row] = await sql`
     with 
