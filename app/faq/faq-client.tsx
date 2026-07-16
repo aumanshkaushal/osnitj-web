@@ -82,7 +82,19 @@ export default function FaqClient({
   const mainRef = useRef<HTMLElement>(null);
   const detailContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  
+  const initialCategory = useMemo(() => {
+    if (initialSelectedSlug && initialQuestions) {
+      const found = initialQuestions.find(
+        (q) => q && q.slug === initialSelectedSlug,
+      );
+      if (found) return found.tag_slug;
+    }
+    return "all";
+  }, [initialSelectedSlug, initialQuestions]);
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+
   const initialSelectedId = useMemo(() => {
     if (initialSelectedSlug && initialQuestions) {
       const found = initialQuestions.find(
@@ -121,33 +133,59 @@ export default function FaqClient({
       return matchesCategory && matchesSearch;
     });
   }, [searchQuery, selectedCategory, initialQuestions]);
+  // Auto-select first question in category on desktop if none selected or if current doesn't match filter
   useEffect(() => {
     if (!selectedQuestionId && filteredQuestions.length > 0) {
       if (window.innerWidth >= 1024) {
         setSelectedQuestionId(filteredQuestions[0].id);
-        router.replace(`/faq/${filteredQuestions[0].slug}`, { scroll: false });
+        window.history.replaceState(null, "", `/faq/${filteredQuestions[0].slug}`);
       }
     }
-  }, [filteredQuestions, selectedQuestionId, router]);
+  }, [filteredQuestions, selectedQuestionId]);
+
   useEffect(() => {
     if (selectedQuestionId) {
       const exists = filteredQuestions.some((q) => q.id === selectedQuestionId);
       if (!exists && filteredQuestions.length > 0) {
         if (window.innerWidth >= 1024) {
           setSelectedQuestionId(filteredQuestions[0].id);
-          router.replace(`/faq/${filteredQuestions[0].slug}`, {
-            scroll: false,
-          });
+          window.history.replaceState(null, "", `/faq/${filteredQuestions[0].slug}`);
         } else {
           setSelectedQuestionId(null);
-          router.replace("/faq", { scroll: false });
+          window.history.replaceState(null, "", "/faq");
         }
       } else if (!exists) {
         setSelectedQuestionId(null);
-        router.replace("/faq", { scroll: false });
+        window.history.replaceState(null, "", "/faq");
       }
     }
-  }, [filteredQuestions, selectedQuestionId, router]);
+  }, [filteredQuestions, selectedQuestionId]);
+
+  // Handle browser back/forward buttons (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathParts = window.location.pathname.split("/");
+      const slug = pathParts[pathParts.length - 1];
+      if (window.location.pathname === "/faq" || !slug) {
+        setSelectedQuestionId(null);
+        setSelectedCategory("all");
+      } else {
+        const found = initialQuestions.find((q) => q && q.slug === slug);
+        if (found) {
+          setSelectedQuestionId(found.id);
+          setSelectedCategory(found.tag_slug);
+        } else {
+          setSelectedQuestionId(null);
+          setSelectedCategory("all");
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [initialQuestions]);
 
   useEffect(() => {
     if (selectedQuestionId) {
@@ -163,11 +201,11 @@ export default function FaqClient({
 
   const handleSelectQuestion = (q: FaqQuestion) => {
     setSelectedQuestionId(q.id);
-    router.push(`/faq/${q.slug}`, { scroll: false });
+    window.history.pushState(null, "", `/faq/${q.slug}`);
   };
   const handleBackToList = () => {
     setSelectedQuestionId(null);
-    router.push("/faq", { scroll: false });
+    window.history.pushState(null, "", "/faq");
   };
   const activeQuestion = useMemo(() => {
     return initialQuestions.find((q) => q.id === selectedQuestionId) || null;
