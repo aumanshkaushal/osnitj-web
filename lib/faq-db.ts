@@ -1,6 +1,7 @@
 import postgres from "postgres";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -76,7 +77,7 @@ export async function updateFaqTagInDb(
   tag: {
     label: string;
     icon: string;
-  }
+  },
 ): Promise<void> {
   if (!sql) throw new Error("DATABASE_URL is not configured.");
 
@@ -152,7 +153,7 @@ export async function updateFaqQuestionInDb(
     question: string;
     answer: string;
     order_index: number;
-  }
+  },
 ): Promise<void> {
   if (!sql) throw new Error("DATABASE_URL is not configured.");
 
@@ -178,58 +179,125 @@ export async function deleteFaqQuestionFromDb(id: string): Promise<void> {
   `;
 }
 
-const CACHE_PATH = path.join(process.cwd(), "node_modules", ".faq-cache.json");
+interface CachedData {
+  tags: FaqTag[];
+  questions: FaqQuestion[];
+  timestamp: number;
+}
 
-export async function getCachedFaqData(): Promise<{ tags: FaqTag[]; questions: FaqQuestion[] }> {
+const faqGlobal = global as unknown as {
+  faqMemoryCache: CachedData | null;
+};
+
+if (!faqGlobal.faqMemoryCache) {
+  faqGlobal.faqMemoryCache = null;
+}
+
+const CACHE_PATH = path.join(os.tmpdir(), "nitj-faq-cache.json");
+
+export async function getCachedFaqData(): Promise<{
+  tags: FaqTag[];
+  questions: FaqQuestion[];
+}> {
+  const now = Date.now();
+  const cacheDurationMs = 120000;
+  if (faqGlobal.faqMemoryCache) {
+    const ageMs = now - faqGlobal.faqMemoryCache.timestamp;
+    if (ageMs < cacheDurationMs) {
+      return {
+        tags: faqGlobal.faqMemoryCache.tags,
+        questions: faqGlobal.faqMemoryCache.questions,
+      };
+    }
+  }
+
+  let fileCacheData: CachedData | null = null;
   try {
     if (fs.existsSync(CACHE_PATH)) {
       const stats = fs.statSync(CACHE_PATH);
-      const ageMs = Date.now() - stats.mtimeMs;
-      if (ageMs < 120000) {
-        const fileContent = fs.readFileSync(CACHE_PATH, "utf8");
-        const parsed = JSON.parse(fileContent);
-        
-        const tags = parsed.tags;
-        const questions = parsed.questions.map((q: any) => ({
-          ...q,
-          created_at: new Date(q.created_at),
-          updated_at: new Date(q.updated_at)
-        }));
-        
+      const ageMs = now - stats.mtimeMs;
+      const fileContent = fs.readFileSync(CACHE_PATH, "utf8");
+      const parsed = JSON.parse(fileContent);
+
+      const tags = parsed.tags;
+      const questions = parsed.questions.map((q: any) => ({
+        ...q,
+        created_at: new Date(q.created_at),
+        updated_at: new Date(q.updated_at),
+      }));
+
+      fileCacheData = {
+        tags,
+        questions,
+        timestamp: stats.mtimeMs,
+      };
+
+      if (ageMs < cacheDurationMs) {
+        faqGlobal.faqMemoryCache = fileCacheData;
         return { tags, questions };
       }
     }
   } catch (e) {
-    console.warn("Failed to read FAQ cache:", e);
+    console.warn("Failed to read FAQ file cache:", e);
   }
-
-  const tags = await getFaqTagsFromDb();
-  const questions = await getFaqQuestionsFromDb();
 
   try {
-    const dir = path.dirname(CACHE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(
-      CACHE_PATH,
-      JSON.stringify({ tags, questions, timestamp: Date.now() }),
-      "utf8"
-    );
-  } catch (e) {
-    console.warn("Failed to write FAQ cache:", e);
-  }
+    const tags = await getFaqTagsFromDb();
+    const questions = await getFaqQuestionsFromDb();
 
-  return { tags, questions };
+    faqGlobal.faqMemoryCache = { tags, questions, timestamp: now };
+
+    try {
+      const dir = path.dirname(CACHE_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(
+        CACHE_PATH,
+        JSON.stringify({ tags, questions, timestamp: now }),
+        "utf8",
+      );
+    } catch (e) {
+      console.warn("Failed to write FAQ file cache:", e);
+    }
+
+    return { tags, questions };
+  } catch (dbError) {
+    console.error(
+      "Database query failed in getCachedFaqData, attempting fallback caching:",
+      dbError,
+    );
+
+    if (faqGlobal.faqMemoryCache) {
+      console.log("Using expired in-memory cache as fallback");
+      return {
+        tags: faqGlobal.faqMemoryCache.tags,
+        questions: faqGlobal.faqMemoryCache.questions,
+      };
+    }
+
+    if (fileCacheData) {
+      console.log("Using expired file cache as fallback");
+      return {
+        tags: fileCacheData.tags,
+        questions: fileCacheData.questions,
+      };
+    }
+
+    console.warn(
+      "No cache available. Returning empty FAQ datasets to prevent crash.",
+    );
+    return { tags: [], questions: [] };
+  }
 }
 
 export function clearFaqCache(): void {
+  faqGlobal.faqMemoryCache = null;
   try {
     if (fs.existsSync(CACHE_PATH)) {
       fs.unlinkSync(CACHE_PATH);
     }
   } catch (e) {
-    console.warn("Failed to clear FAQ cache:", e);
+    console.warn("Failed to clear FAQ file cache:", e);
   }
 }
-
