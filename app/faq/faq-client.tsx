@@ -30,6 +30,8 @@ import {
   Clock,
 } from "lucide-react";
 import ThemeToggle from "@/components/theme-toggle";
+import { trackEvent } from "@/components/analytics-provider";
+
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
   HelpCircle,
   Home,
@@ -133,6 +135,21 @@ export default function FaqClient({
       return matchesCategory && matchesSearch;
     });
   }, [searchQuery, selectedCategory, initialQuestions]);
+
+  // Track search query with a debounce
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+
+    const timer = setTimeout(() => {
+      trackEvent("search_query", {
+        query: searchQuery.trim(),
+        resultsCount: filteredQuestions.length,
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, filteredQuestions.length]);
+
   // Auto-select first question in category on desktop if none selected or if current doesn't match filter
   useEffect(() => {
     if (!selectedQuestionId && filteredQuestions.length > 0) {
@@ -202,11 +219,16 @@ export default function FaqClient({
   const handleSelectQuestion = (q: FaqQuestion) => {
     setSelectedQuestionId(q.id);
     window.history.pushState(null, "", `/faq/${q.slug}`);
+    trackEvent("faq_open", { faqId: q.slug, question: q.question });
   };
   const handleBackToList = () => {
+    if (activeQuestion) {
+      trackEvent("faq_close", { faqId: activeQuestion.slug, question: activeQuestion.question });
+    }
     setSelectedQuestionId(null);
     window.history.pushState(null, "", "/faq");
   };
+
   const activeQuestion = useMemo(() => {
     return initialQuestions.find((q) => q.id === selectedQuestionId) || null;
   }, [selectedQuestionId, initialQuestions]);

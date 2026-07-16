@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Calendar, HelpCircle, ArrowRight } from "lucide-react";
+import { BookOpen, Calendar, HelpCircle, ArrowRight, BarChart3 } from "lucide-react";
 
 export default function AdminHubPage() {
   const modes = [
@@ -22,6 +22,13 @@ export default function AdminHubPage() {
       description: "Manage categories, icons, questions, and answers for the college fresher FAQ guide.",
       icon: HelpCircle,
       href: "/admin/faq",
+      status: "active",
+    },
+    {
+      title: "Visitor Analytics",
+      description: "Monitor real-time pageviews, visitor sessions, FAQ queries, and custom feature usage.",
+      icon: BarChart3,
+      href: "/admin/analytics",
       status: "active",
     },
   ];
