@@ -1,4 +1,4 @@
-import postgres from "postgres";
+import { sql } from "@/lib/db";
 import type { Dispatch } from "@/lib/dispatch";
 
 type DispatchRow = {
@@ -11,16 +11,6 @@ type DispatchRow = {
   read_time: number | null;
   markdown_content: string | null;
 };
-
-const connectionString = process.env.DATABASE_URL;
-
-const sql = connectionString
-  ? postgres(connectionString, {
-      ssl: "require",
-      max: 1,
-      prepare: false,
-    })
-  : null;
 
 function mapDispatch(row: DispatchRow): Dispatch {
   return {

@@ -1,24 +1,4 @@
-import postgres from "postgres";
-
-const connectionString = process.env.DATABASE_URL;
-
-const globalForPostgres = global as unknown as {
-  analyticsSql: ReturnType<typeof postgres> | undefined;
-};
-
-const sql = globalForPostgres.analyticsSql ?? (connectionString
-  ? postgres(connectionString, {
-      ssl: "require",
-      max: 5, // Increase pool size to handle concurrent query execution
-      prepare: false,
-      connect_timeout: 3, // 3 seconds timeout for socket connection
-      idle_timeout: 5, // Close idle connections after 5 seconds of inactivity
-    })
-  : null);
-
-if (process.env.NODE_ENV !== "production") {
-  if (sql) globalForPostgres.analyticsSql = sql;
-}
+import { sql } from "@/lib/db";
 
 export type AnalyticsEvent = {
   id: string;
@@ -50,6 +30,7 @@ export async function recordAnalyticsEvent(event: {
  * Helper to generate the timestamp condition based on the period filter
  */
 function getPeriodCondition(period: string) {
+  if (!sql) throw new Error("DATABASE_URL is not configured.");
   switch (period) {
     case "24h":
       return sql`timestamp >= now() - interval '24 hours'`;

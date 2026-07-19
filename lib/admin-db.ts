@@ -1,14 +1,4 @@
-import postgres from "postgres";
-
-const connectionString = process.env.DATABASE_URL;
-
-const sql = connectionString
-  ? postgres(connectionString, {
-      ssl: "require",
-      max: 1,
-      prepare: false,
-    })
-  : null;
+import { sql } from "@/lib/db";
 
 export type AdminUser = {
   id: string;
